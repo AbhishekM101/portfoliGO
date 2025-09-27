@@ -3,6 +3,8 @@ import numpy as np
 import time
 import requests
 import joblib
+import sys
+from flask import Flask, jsonify, request
 from sklearn.preprocessing import MinMaxScaler
 from API_KEY import API_KEY
 
@@ -218,7 +220,7 @@ def run_scoring_for_tickers(ticker_list):
             df[feature] = 1
 
     # Load the saved growth model and scalers from your original model file
-    saved_model_data = joblib.load("growth_potential_model.pkl")
+    saved_model_data = joblib.load("../model_data/growth_potential_model.pkl")
     saved_scalers = saved_model_data["scalers"]
     saved_model = saved_model_data["model"]
 
@@ -240,9 +242,70 @@ def run_scoring_for_tickers(ticker_list):
     return df_normalized
 
 # ====================================================
+# Flask Web API Endpoints
+# ====================================================
+
+app = Flask(__name__)
+
+@app.route('/api/growth/<symbol>')
+def get_growth_score(symbol):
+    """Get growth score for a single stock symbol"""
+    try:
+        print(f"Getting growth score for {symbol}...")
+        result = run_scoring_for_tickers([symbol])
+        if result is not None and not result.empty:
+            score = result.iloc[0]['predicted_growth_potential']
+            return jsonify({
+                'symbol': symbol,
+                'growthScore': float(score),
+                'status': 'success'
+            })
+        else:
+            return jsonify({'error': 'No data found for symbol'}), 404
+    except Exception as e:
+        print(f"Error getting growth score for {symbol}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/growth/bulk', methods=['POST'])
+def get_bulk_growth_scores():
+    """Get growth scores for multiple stock symbols"""
+    try:
+        data = request.get_json()
+        symbols = data.get('symbols', [])
+        if not symbols:
+            return jsonify({'error': 'No symbols provided'}), 400
+        
+        print(f"Getting growth scores for {len(symbols)} symbols...")
+        result = run_scoring_for_tickers(symbols)
+        
+        if result is not None and not result.empty:
+            scores = []
+            for _, row in result.iterrows():
+                scores.append({
+                    'symbol': row['Symbol'],
+                    'growthScore': float(row['predicted_growth_potential'])
+                })
+            return jsonify({'scores': scores, 'status': 'success'})
+        else:
+            return jsonify({'error': 'No data found'}), 404
+    except Exception as e:
+        print(f"Error getting bulk growth scores: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/growth/health')
+def health_check():
+    """Health check endpoint"""
+    return jsonify({'status': 'healthy', 'service': 'growth_model'})
+
+# ====================================================
 # Main Execution Block
 # ====================================================
 if __name__ == "__main__":
-    # Replace with your desired ticker list (e.g., S&P 500 tickers)
-    tickers_to_score = ["AMD", "AAPL", "NVDA", "TSLA", "ISRG", "MU", "INTC", "PLTR", "KO", "PEP", "WMT", "HD", "MCD", "NKE", "SBUX", "TGT", "PG", "AMGN", "CI", "CVS", "HUM", "DAL", "FDX", "HON", "LMT", "UBER", "VST", "XEL"]  # Example tickers; modify as needed
-    run_scoring_for_tickers(tickers_to_score)
+    # Check if running as web server or training script
+    if len(sys.argv) > 1 and sys.argv[1] == '--server':
+        print("Starting Growth Model API server on port 5001...")
+        app.run(host='0.0.0.0', port=5001, debug=True)
+    else:
+        # Original training code
+        tickers_to_score = ["AMD", "AAPL", "NVDA", "TSLA", "ISRG", "MU", "INTC", "PLTR", "KO", "PEP", "WMT", "HD", "MCD", "NKE", "SBUX", "TGT", "PG", "AMGN", "CI", "CVS", "HUM", "DAL", "FDX", "HON", "LMT", "UBER", "VST", "XEL"]  # Example tickers; modify as needed
+        run_scoring_for_tickers(tickers_to_score)

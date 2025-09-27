@@ -5,7 +5,9 @@ import requests
 import joblib
 import warnings
 import os
+import sys
 from pathlib import Path
+from flask import Flask, jsonify, request
 warnings.filterwarnings('ignore')
 
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
@@ -522,7 +524,7 @@ class risk_model_gen:
         return info
 
 # Convenience functions
-def quick_risk_analysis(symbols, model_dir="model_data"):
+def quick_risk_analysis(symbols, model_dir="../model_data"):
     """Quick risk analysis - trains model if needed, otherwise uses cached"""
     scorer = risk_model_gen(model_dir)
     
@@ -534,31 +536,110 @@ def quick_risk_analysis(symbols, model_dir="model_data"):
     
     return scorer.predict_risk_scores(symbols)
 
-def train_new_model(symbols=None, model_dir="model_data", force_refresh=False):
+def train_new_model(symbols=None, model_dir="../model_data", force_refresh=False):
     """Train a new model from scratch"""
-    scorer = StockRiskScorer(model_dir)
+    scorer = risk_model_gen(model_dir)
     scorer.train_model(symbols=symbols)
     return scorer
 
+# ====================================================
+# Flask Web API Endpoints
+# ====================================================
+
+app = Flask(__name__)
+
+@app.route('/api/risk/<symbol>')
+def get_risk_score(symbol):
+    """Get risk score for a single stock symbol"""
+    try:
+        print(f"Getting risk score for {symbol}...")
+        scorer = risk_model_gen(model_dir="../model_data")
+        
+        try:
+            scorer.load_model()
+        except FileNotFoundError:
+            print("No saved model found. Training new model...")
+            scorer.train_model()
+        
+        results = scorer.predict_risk_scores([symbol])
+        if not results.empty:
+            row = results.iloc[0]
+            return jsonify({
+                'symbol': symbol,
+                'riskScore': float(row['risk_score']),
+                'riskCategory': row['risk_category'],
+                'status': 'success'
+            })
+        else:
+            return jsonify({'error': 'No data found for symbol'}), 404
+    except Exception as e:
+        print(f"Error getting risk score for {symbol}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/risk/bulk', methods=['POST'])
+def get_bulk_risk_scores():
+    """Get risk scores for multiple stock symbols"""
+    try:
+        data = request.get_json()
+        symbols = data.get('symbols', [])
+        if not symbols:
+            return jsonify({'error': 'No symbols provided'}), 400
+        
+        print(f"Getting risk scores for {len(symbols)} symbols...")
+        scorer = risk_model_gen(model_dir="../model_data")
+        
+        try:
+            scorer.load_model()
+        except FileNotFoundError:
+            print("No saved model found. Training new model...")
+            scorer.train_model()
+        
+        results = scorer.predict_risk_scores(symbols)
+        
+        if not results.empty:
+            scores = []
+            for _, row in results.iterrows():
+                scores.append({
+                    'symbol': row['symbol'],
+                    'riskScore': float(row['risk_score']),
+                    'riskCategory': row['risk_category']
+                })
+            return jsonify({'scores': scores, 'status': 'success'})
+        else:
+            return jsonify({'error': 'No data found'}), 404
+    except Exception as e:
+        print(f"Error getting bulk risk scores: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/risk/health')
+def health_check():
+    """Health check endpoint"""
+    return jsonify({'status': 'healthy', 'service': 'risk_model'})
+
 # Example usage
 if __name__ == "__main__":
-    # Test symbols
-    test_symbols = [
-        "AAPL", "TSLA", "MSFT", "GOOGL", "NVDA", "AMC", "GME", "PLTR", "JNJ", "VST", "XEL",
-        "KO", "ROKU", "COIN", "BABA"
-    ]
-    
-    # Quick analysis (uses cached model if available)
-    results = quick_risk_analysis(test_symbols)
-    
-    if not results.empty:
-        print("\nRisk Analysis Results:")
-        print("-" * 50)
-        for _, row in results.iterrows():
-            print(f"{row['symbol']:6} | {row['risk_score']:5.1f} | {row['risk_category']}")
-    
-    print(f"\nNote: Higher scores indicate LOWER risk!")
-    print("Risk Categories:")
-    print("- Low Risk (70-100): Safer investments")
-    print("- Medium Risk (40-69): Moderate risk investments") 
-    print("- High Risk (0-39): Higher risk investments")
+    # Check if running as web server or training script
+    if len(sys.argv) > 1 and sys.argv[1] == '--server':
+        print("Starting Risk Model API server on port 5002...")
+        app.run(host='0.0.0.0', port=5002, debug=True)
+    else:
+        # Original training code
+        test_symbols = [
+            "AAPL", "TSLA", "MSFT", "GOOGL", "NVDA", "AMC", "GME", "PLTR", "JNJ", "VST", "XEL",
+            "KO", "ROKU", "COIN", "BABA"
+        ]
+        
+        # Quick analysis (uses cached model if available)
+        results = quick_risk_analysis(test_symbols)
+        
+        if not results.empty:
+            print("\nRisk Analysis Results:")
+            print("-" * 50)
+            for _, row in results.iterrows():
+                print(f"{row['symbol']:6} | {row['risk_score']:5.1f} | {row['risk_category']}")
+        
+        print(f"\nNote: Higher scores indicate LOWER risk!")
+        print("Risk Categories:")
+        print("- Low Risk (70-100): Safer investments")
+        print("- Medium Risk (40-69): Moderate risk investments") 
+        print("- High Risk (0-39): Higher risk investments")
