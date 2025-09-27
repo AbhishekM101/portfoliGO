@@ -5,11 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LeagueProvider } from "@/contexts/LeagueContext";
+import { RosterProvider } from "@/contexts/RosterContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Roster from "./pages/Roster";
 import League from "./pages/League";
 import Matchup from "./pages/Matchup";
+import Players from "./pages/Players";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,7 +20,8 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <LeagueProvider>
-        <TooltipProvider>
+        <RosterProvider>
+          <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -37,14 +40,15 @@ const App = () => (
               } />
               <Route path="/players" element={
                 <ProtectedRoute>
-                  <div>Players Page - Coming Soon</div>
+                  <Players />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </TooltipProvider>
+          </TooltipProvider>
+        </RosterProvider>
       </LeagueProvider>
     </AuthProvider>
   </QueryClientProvider>
