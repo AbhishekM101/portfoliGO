@@ -8,9 +8,11 @@ import { AppNavigation } from "@/components/AppNavigation";
 import { TrendingUp, TrendingDown, Minus, BarChart3, Calendar, AlertCircle, RefreshCw } from "lucide-react";
 import { useRoster } from "@/hooks/useRoster";
 import { Stock } from "@/types/roster";
+import { useNavigate } from "react-router-dom";
 
 const Roster = () => {
   const { team, roster, stats, isLoading, error, refetch } = useRoster();
+  const navigate = useNavigate();
 
   const getChangeIcon = (change: number) => {
     if (change > 0) return <TrendingUp className="h-4 w-4 text-bull" />;
@@ -188,7 +190,7 @@ const Roster = () => {
                 <p className="text-muted-foreground mb-4">
                   Start building your fantasy stock portfolio by adding stocks.
                 </p>
-                <Button>
+                <Button onClick={() => navigate('/players')}>
                   Add Stocks
                 </Button>
               </div>
