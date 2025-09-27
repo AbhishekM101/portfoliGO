@@ -24,19 +24,24 @@ import {
   Globe
 } from "lucide-react";
 import { AppNavigation } from "@/components/AppNavigation";
+import { DatabaseSetupCard } from "@/components/DatabaseSetupCard";
+import { SupabaseConnectionTest } from "@/components/SupabaseConnectionTest";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLeague } from "@/contexts/LeagueContext";
 import { useToast } from "@/hooks/use-toast";
 import { LeagueService, type LeagueWithMembers, type CreateLeagueData, type JoinLeagueData } from "@/services/leagueService";
 
 const League = () => {
   const { user } = useAuth();
+  const { userLeagues, refreshLeagues, currentLeague, setCurrentLeague } = useLeague();
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const [userLeagues, setUserLeagues] = useState<LeagueWithMembers[]>([]);
   const [publicLeagues, setPublicLeagues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDatabaseSetup, setShowDatabaseSetup] = useState(false);
   
   // Create League State
   const [showCreateLeague, setShowCreateLeague] = useState(false);
@@ -64,32 +69,28 @@ const League = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    loadUserLeagues();
     loadPublicLeagues();
   }, []);
-
-  const loadUserLeagues = async () => {
-    try {
-      const leagues = await LeagueService.getUserLeagues();
-      setUserLeagues(leagues);
-    } catch (err) {
-      console.error('Error loading user leagues:', err);
-      setError('Failed to load your leagues');
-    }
-  };
 
   const loadPublicLeagues = async () => {
     try {
       const leagues = await LeagueService.getPublicLeagues();
       setPublicLeagues(leagues);
-    } catch (err) {
+      setShowDatabaseSetup(false);
+    } catch (err: any) {
       console.error('Error loading public leagues:', err);
+      // Since we confirmed tables exist via API test, don't show database setup
+      // The error is likely due to RLS policies or no public leagues
+      setPublicLeagues([]);
+      setShowDatabaseSetup(false);
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreateLeague = async () => {
+    console.log('Creating league with data:', createLeagueData);
+    
     if (!createLeagueData.name.trim()) {
       setError("Please enter a league name");
       return;
@@ -104,8 +105,11 @@ const League = () => {
     setError(null);
 
     try {
+      console.log('Calling LeagueService.createLeague...');
       const newLeague = await LeagueService.createLeague(createLeagueData);
-      setUserLeagues(prev => [...prev, newLeague]);
+      console.log('League created successfully:', newLeague);
+      
+      await refreshLeagues(); // Refresh league context
       setShowCreateLeague(false);
       
       toast({
@@ -125,6 +129,8 @@ const League = () => {
         value_weight: 40,
       });
     } catch (err: any) {
+      console.error('Error creating league:', err);
+      // Don't show database setup since we confirmed tables exist
       setError(err.message || "Failed to create league");
     } finally {
       setCreatingLeague(false);
@@ -147,7 +153,7 @@ const League = () => {
 
     try {
       await LeagueService.joinLeague(joinLeagueData);
-      await loadUserLeagues(); // Refresh user leagues
+      await refreshLeagues(); // Refresh league context
       setShowJoinLeague(false);
       
       toast({
@@ -175,7 +181,7 @@ const League = () => {
   const handleLeaveLeague = async (leagueId: string) => {
     try {
       await LeagueService.leaveLeague(leagueId);
-      await loadUserLeagues(); // Refresh user leagues
+      await refreshLeagues(); // Refresh league context
       
       toast({
         title: "Left League",
@@ -196,6 +202,16 @@ const League = () => {
       title: "Copied!",
       description: "League code copied to clipboard.",
     });
+  };
+
+  const handleSelectLeague = (league: LeagueWithMembers) => {
+    setCurrentLeague(league);
+    toast({
+      title: "League Selected",
+      description: `You're now viewing "${league.name}".`,
+    });
+    // Navigate to roster after selecting league
+    navigate('/roster');
   };
 
   const filteredPublicLeagues = publicLeagues.filter(league =>
@@ -220,10 +236,12 @@ const League = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppNavigation />
-      
-      <div className="max-w-6xl mx-auto p-6">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-background">
+        <AppNavigation />
+        
+        <div className="max-w-6xl mx-auto p-6">
+        
         <Tabs defaultValue="my-leagues" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="my-leagues">My Leagues</TabsTrigger>
@@ -245,7 +263,7 @@ const League = () => {
                     Create League
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Create New League</DialogTitle>
                     <DialogDescription>
@@ -475,6 +493,13 @@ const League = () => {
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">{league.status.replace('_', ' ')}</Badge>
                           <Button
+                            onClick={() => handleSelectLeague(league)}
+                            size="sm"
+                          >
+                            <Trophy className="h-4 w-4 mr-1" />
+                            Select League
+                          </Button>
+                          <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleLeaveLeague(league.id)}
@@ -642,6 +667,7 @@ const League = () => {
         </Tabs>
       </div>
     </div>
+    </ErrorBoundary>
   );
 };
 

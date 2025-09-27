@@ -2,7 +2,9 @@ import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLeague } from "@/contexts/LeagueContext";
 import { useToast } from "@/hooks/use-toast";
+import { LeagueSelector } from "@/components/LeagueSelector";
 import { 
   Users, 
   Trophy, 
@@ -33,6 +35,7 @@ export const AppNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { hasLeagues } = useLeague();
   const { toast } = useToast();
   
   const handleSignOut = async () => {
@@ -63,44 +66,66 @@ export const AppNavigation = () => {
     <nav className="bg-card border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          {/* Team Info */}
+          {/* League/Team Info */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-              <BarChart3 className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg">
-                {user?.user_metadata?.team_name || "Bull Market Bulls"}
-              </h1>
-              <p className="text-xs text-muted-foreground">Your Team</p>
-            </div>
+            {hasLeagues ? (
+              <LeagueSelector />
+            ) : (
+              <>
+                <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                  <BarChart3 className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="font-bold text-lg">Fantasy Stocks</h1>
+                  <p className="text-xs text-muted-foreground">Join a league to get started</p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Navigation Tabs */}
           <div className="flex">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.to;
-              
-              return (
-                <NavLink
-                  key={item.name}
-                  to={item.to}
-                    className={cn(
-                      "relative px-6 py-4 text-sm font-medium transition-colors duration-200",
-                      "border-b-2 border-transparent",
-                      isActive 
-                        ? "text-primary border-primary" 
-                        : "text-muted-foreground hover:text-foreground hover:border-border"
-                    )}
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4" />
-                    {item.name}
-                  </div>
-                </NavLink>
-              );
-            })}
+            {hasLeagues ? (
+              navigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.to;
+                
+                return (
+                  <NavLink
+                    key={item.name}
+                    to={item.to}
+                      className={cn(
+                        "relative px-6 py-4 text-sm font-medium transition-colors duration-200",
+                        "border-b-2 border-transparent",
+                        isActive 
+                          ? "text-primary border-primary" 
+                          : "text-muted-foreground hover:text-foreground hover:border-border"
+                      )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" />
+                      {item.name}
+                    </div>
+                  </NavLink>
+                );
+              })
+            ) : (
+              <NavLink
+                to="/league"
+                className={cn(
+                  "relative px-6 py-4 text-sm font-medium transition-colors duration-200",
+                  "border-b-2 border-transparent",
+                  location.pathname === "/league"
+                    ? "text-primary border-primary" 
+                    : "text-muted-foreground hover:text-foreground hover:border-border"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4" />
+                  LEAGUES
+                </div>
+              </NavLink>
+            )}
           </div>
 
           {/* User Menu */}
