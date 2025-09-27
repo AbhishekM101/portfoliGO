@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AppNavigation } from "@/components/AppNavigation";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -125,8 +124,6 @@ const Players = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppNavigation />
-      
       <div className="max-w-6xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">

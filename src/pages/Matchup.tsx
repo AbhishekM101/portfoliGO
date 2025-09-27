@@ -1,7 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { AppNavigation } from "@/components/AppNavigation";
 import { TrendingUp, TrendingDown, Minus, Trophy, Target, Calendar } from "lucide-react";
 
 // Mock matchup data
@@ -53,8 +52,6 @@ const Matchup = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppNavigation />
-      
       <div className="max-w-7xl mx-auto p-6">
         {/* Week Header */}
         <div className="text-center mb-8">
