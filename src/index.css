@@ -48,10 +48,14 @@
 
   html {
     scroll-behavior: smooth;
+    height: auto;
+    min-height: 100vh;
   }
 
   body {
     @apply bg-background text-foreground;
     overflow-x: hidden;
+    height: auto;
+    min-height: 100vh;
   }
 }

@@ -14,7 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      leagues: {
+        Row: {
+          id: string
+          name: string
+          code: string
+          description: string | null
+          is_public: boolean
+          max_players: number
+          roster_size: number
+          status: 'draft_pending' | 'draft_active' | 'season_active' | 'season_complete'
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          code?: string
+          description?: string | null
+          is_public?: boolean
+          max_players?: number
+          roster_size?: number
+          status?: 'draft_pending' | 'draft_active' | 'season_active' | 'season_complete'
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          code?: string
+          description?: string | null
+          is_public?: boolean
+          max_players?: number
+          roster_size?: number
+          status?: 'draft_pending' | 'draft_active' | 'season_active' | 'season_complete'
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      league_members: {
+        Row: {
+          id: string
+          league_id: string
+          user_id: string
+          team_name: string
+          is_commissioner: boolean
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          league_id: string
+          user_id: string
+          team_name: string
+          is_commissioner?: boolean
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          league_id?: string
+          user_id?: string
+          team_name?: string
+          is_commissioner?: boolean
+          joined_at?: string
+        }
+      }
+      league_settings: {
+        Row: {
+          id: string
+          league_id: string
+          risk_weight: number
+          growth_weight: number
+          value_weight: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          league_id: string
+          risk_weight?: number
+          growth_weight?: number
+          value_weight?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          league_id?: string
+          risk_weight?: number
+          growth_weight?: number
+          value_weight?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
