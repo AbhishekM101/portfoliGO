@@ -12,6 +12,7 @@ import Roster from "./pages/Roster";
 import League from "./pages/League";
 import Matchup from "./pages/Matchup";
 import Players from "./pages/Players";
+import LeagueDashboard from "./pages/LeagueDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,8 +28,13 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/league" element={<League />} />
-              <Route path="/roster" element={
+                <Route path="/league" element={<League />} />
+                <Route path="/league/:leagueId" element={
+                  <ProtectedRoute>
+                    <LeagueDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/roster" element={
                 <ProtectedRoute>
                   <Roster />
                 </ProtectedRoute>
