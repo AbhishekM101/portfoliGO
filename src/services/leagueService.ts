@@ -35,57 +35,105 @@ export class LeagueService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase
-      .from('leagues')
-      .select(`
-        *,
-        members:league_members(*),
-        settings:league_settings(*)
-      `)
-      .eq('members.user_id', user.id);
+    try {
+      const { data, error } = await supabase
+        .from('leagues')
+        .select(`
+          *,
+          members:league_members(*),
+          settings:league_settings(*)
+        `)
+        .eq('members.user_id', user.id);
 
-    if (error) throw error;
+      if (error) {
+        // If tables don't exist, return empty array
+        if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+          return [];
+        }
+        throw error;
+      }
 
-    return data.map(league => ({
-      ...league,
-      member_count: league.members.length
-    }));
+      return data.map(league => ({
+        ...league,
+        member_count: league.members.length
+      }));
+    } catch (error: any) {
+      // If tables don't exist, return empty array
+      if (error.message.includes('relation') || error.message.includes('does not exist')) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   // Get public leagues that user can join
   static async getPublicLeagues(): Promise<League[]> {
-    const { data, error } = await supabase
-      .from('leagues')
-      .select('*')
-      .eq('is_public', true)
-      .eq('status', 'draft_pending')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('leagues')
+        .select('*')
+        .eq('is_public', true)
+        .eq('status', 'draft_pending')
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        // If tables don't exist, return empty array
+        if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+          return [];
+        }
+        // If RLS is blocking access, return empty array (tables exist but no public leagues visible)
+        if (error.message.includes('permission denied') || error.message.includes('JWT')) {
+          return [];
+        }
+        throw error;
+      }
+      return data;
+    } catch (error: any) {
+      // If tables don't exist, return empty array
+      if (error.message.includes('relation') || error.message.includes('does not exist')) {
+        return [];
+      }
+      // If RLS is blocking access, return empty array
+      if (error.message.includes('permission denied') || error.message.includes('JWT')) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   // Get league by code
   static async getLeagueByCode(code: string): Promise<LeagueWithMembers | null> {
-    const { data, error } = await supabase
-      .from('leagues')
-      .select(`
-        *,
-        members:league_members(*),
-        settings:league_settings(*)
-      `)
-      .eq('code', code.toUpperCase())
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('leagues')
+        .select(`
+          *,
+          members:league_members(*),
+          settings:league_settings(*)
+        `)
+        .eq('code', code.toUpperCase())
+        .single();
 
-    if (error) {
-      if (error.code === 'PGRST116') return null; // No rows returned
+      if (error) {
+        if (error.code === 'PGRST116') return null; // No rows returned
+        // If tables don't exist, return null
+        if (error.message.includes('relation') || error.message.includes('does not exist')) {
+          return null;
+        }
+        throw error;
+      }
+
+      return {
+        ...data,
+        member_count: data.members.length
+      };
+    } catch (error: any) {
+      // If tables don't exist, return null
+      if (error.message.includes('relation') || error.message.includes('does not exist')) {
+        return null;
+      }
       throw error;
     }
-
-    return {
-      ...data,
-      member_count: data.members.length
-    };
   }
 
   // Create a new league
@@ -93,47 +141,96 @@ export class LeagueService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // Generate unique league code
-    const { data: codeData, error: codeError } = await supabase
-      .rpc('generate_league_code');
+    try {
+      // Generate unique league code
+      const code = await this.generateUniqueLeagueCode();
 
-    if (codeError) throw codeError;
+      const leagueInsert: LeagueInsert = {
+        name: leagueData.name,
+        code: code,
+        description: leagueData.description,
+        is_public: leagueData.is_public,
+        max_players: leagueData.max_players,
+        roster_size: leagueData.roster_size,
+        created_by: user.id
+      };
 
-    const leagueInsert: LeagueInsert = {
-      name: leagueData.name,
-      code: codeData,
-      description: leagueData.description,
-      is_public: leagueData.is_public,
-      max_players: leagueData.max_players,
-      roster_size: leagueData.roster_size,
-      created_by: user.id
-    };
+      const { data: league, error: leagueError } = await supabase
+        .from('leagues')
+        .insert(leagueInsert)
+        .select()
+        .single();
 
-    const { data: league, error: leagueError } = await supabase
-      .from('leagues')
-      .insert(leagueInsert)
-      .select()
-      .single();
+      if (leagueError) {
+        if (leagueError.message.includes('relation') || leagueError.message.includes('does not exist')) {
+          throw new Error('Database tables not found. Please run the SQL migration in your Supabase dashboard first.');
+        }
+        throw leagueError;
+      }
 
-    if (leagueError) throw leagueError;
+      // Create league settings
+      const { error: settingsError } = await supabase
+        .from('league_settings')
+        .insert({
+          league_id: league.id,
+          risk_weight: leagueData.risk_weight,
+          growth_weight: leagueData.growth_weight,
+          value_weight: leagueData.value_weight
+        });
 
-    // Update league settings
-    const { error: settingsError } = await supabase
-      .from('league_settings')
-      .update({
-        risk_weight: leagueData.risk_weight,
-        growth_weight: leagueData.growth_weight,
-        value_weight: leagueData.value_weight
-      })
-      .eq('league_id', league.id);
+      if (settingsError) {
+        if (settingsError.message.includes('relation') || settingsError.message.includes('does not exist')) {
+          throw new Error('Database tables not found. Please run the SQL migration in your Supabase dashboard first.');
+        }
+        throw settingsError;
+      }
 
-    if (settingsError) throw settingsError;
+      // Creator is automatically added as admin via database trigger
 
-    // Get the complete league data
-    const completeLeague = await this.getLeagueByCode(league.code);
-    if (!completeLeague) throw new Error('Failed to retrieve created league');
+      // Get the complete league data
+      const completeLeague = await this.getLeagueByCode(league.code);
+      if (!completeLeague) throw new Error('Failed to retrieve created league');
 
-    return completeLeague;
+      return completeLeague;
+    } catch (error: any) {
+      if (error.message.includes('relation') || error.message.includes('does not exist')) {
+        throw new Error('Database tables not found. Please run the SQL migration in your Supabase dashboard first.');
+      }
+      throw error;
+    }
+  }
+
+  // Generate a unique league code
+  private static async generateUniqueLeagueCode(): Promise<string> {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code: string;
+    let exists = true;
+
+    // Try up to 10 times to generate a unique code
+    for (let attempts = 0; attempts < 10; attempts++) {
+      code = '';
+      for (let i = 0; i < 6; i++) {
+        code += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+
+      // Check if code already exists
+      const { data } = await supabase
+        .from('leagues')
+        .select('code')
+        .eq('code', code)
+        .single();
+
+      if (!data) {
+        exists = false;
+        break;
+      }
+    }
+
+    if (exists) {
+      throw new Error('Unable to generate unique league code. Please try again.');
+    }
+
+    return code!;
   }
 
   // Join a league by code
@@ -169,7 +266,11 @@ export class LeagueService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error joining league:', error);
+      throw error;
+    }
+    
     return member;
   }
 

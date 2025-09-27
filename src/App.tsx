@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LeagueProvider } from "@/contexts/LeagueContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Roster from "./pages/Roster";
 import League from "./pages/League";
@@ -15,21 +17,35 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/roster" element={<Roster />} />
-            <Route path="/matchup" element={<Matchup />} />
-            <Route path="/players" element={<div>Players Page - Coming Soon</div>} />
-            <Route path="/league" element={<League />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <LeagueProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/league" element={<League />} />
+              <Route path="/roster" element={
+                <ProtectedRoute>
+                  <Roster />
+                </ProtectedRoute>
+              } />
+              <Route path="/matchup" element={
+                <ProtectedRoute>
+                  <Matchup />
+                </ProtectedRoute>
+              } />
+              <Route path="/players" element={
+                <ProtectedRoute>
+                  <div>Players Page - Coming Soon</div>
+                </ProtectedRoute>
+              } />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </LeagueProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
