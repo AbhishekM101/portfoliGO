@@ -135,6 +135,7 @@ const Draft = () => {
   // Find the current league
   const currentLeague = userLeagues.find(league => league.id === leagueId);
   
+  
   if (!currentLeague) {
     return (
       <div className="min-h-screen bg-background">

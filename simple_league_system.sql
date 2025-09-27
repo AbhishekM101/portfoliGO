@@ -106,10 +106,30 @@ FOR INSERT WITH CHECK (
   )
 );
 
--- Step 8: Grant permissions
+-- Step 8: Create function to automatically make league creators admins
+CREATE OR REPLACE FUNCTION make_creator_admin()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- When a league is created, automatically add the creator as an admin member
+  -- Use a default team name that can be updated later
+  INSERT INTO league_members (league_id, user_id, team_name, is_commissioner)
+  VALUES (NEW.id, NEW.created_by, 'My Team', true);
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Step 9: Create trigger to automatically make creators admins
+DROP TRIGGER IF EXISTS make_creator_admin_trigger ON leagues;
+CREATE TRIGGER make_creator_admin_trigger
+  AFTER INSERT ON leagues
+  FOR EACH ROW
+  EXECUTE FUNCTION make_creator_admin();
+
+-- Step 10: Grant permissions
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
 
--- Step 9: Test
+-- Step 11: Test
 SELECT 'League system setup complete!' as status;

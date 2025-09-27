@@ -251,7 +251,7 @@ const LeagueDashboard = () => {
           <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="roster">Roster</TabsTrigger>
             <TabsTrigger value="matchups">Matchups</TabsTrigger>
-            <TabsTrigger value="standings">Standings</TabsTrigger>
+            <TabsTrigger value="standings">Members</TabsTrigger>
             <TabsTrigger value="stocks">Stocks</TabsTrigger>
           </TabsList>
 
@@ -394,42 +394,74 @@ const LeagueDashboard = () => {
 
           {/* Standings Tab */}
           <TabsContent value="standings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>League Standings</CardTitle>
-                <CardDescription>Current league standings and statistics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockStandings.map((team) => (
-                    <div 
-                      key={team.rank}
-                      className="flex items-center justify-between p-4 rounded-lg bg-gradient-card border border-border/50"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="text-center">
-                          <div className="text-xs text-muted-foreground">RANK</div>
-                          <div className="text-lg font-bold">{team.rank}</div>
+            <div className="space-y-6">
+              {/* League Members Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>League Members</CardTitle>
+                  <CardDescription>Current members in this league</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {league.members && league.members.length > 0 ? (
+                      league.members.map((member, index) => (
+                        <div 
+                          key={member.id}
+                          className="flex items-center justify-between p-4 rounded-lg bg-gradient-card border border-border/50"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="text-center">
+                              <div className="text-xs text-muted-foreground">#</div>
+                              <div className="text-lg font-bold">{index + 1}</div>
+                            </div>
+                            
+                            <div>
+                              <h3 className="text-lg font-bold">{member.team_name}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {member.is_commissioner ? 'Commissioner' : 'Member'} • Joined {new Date(member.joined_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            {member.is_commissioner && (
+                              <Badge variant="default" className="bg-yellow-500 text-white">
+                                Admin
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        
-                        <div>
-                          <h3 className="text-lg font-bold">{team.team}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {team.wins}-{team.losses} • PF: {team.pointsFor.toFixed(1)} • PA: {team.pointsAgainst.toFixed(1)}
-                          </p>
-                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-12">
+                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No Members Yet</h3>
+                        <p className="text-muted-foreground">
+                          This league doesn't have any members yet.
+                        </p>
                       </div>
-                      
-                      <div className="text-right">
-                        {team.rank <= 3 && (
-                          <Award className="h-6 w-6 text-yellow-500" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Overall Standings Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Overall Standings</CardTitle>
+                  <CardDescription>League rankings and statistics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12">
+                    <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Standings Coming Soon</h3>
+                    <p className="text-muted-foreground">
+                      League standings and rankings will be available here.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Stocks Tab */}

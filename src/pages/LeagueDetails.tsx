@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Trophy, Target, Users, BarChart3 } from "lucide-react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { useRoster } from "@/contexts/RosterContext";
+import { useAuth } from "@/contexts/AuthContext";
 import Roster from "./Roster";
 import Matchup from "./Matchup";
 import Players from "./Players";
@@ -16,10 +17,12 @@ const LeagueDetails = () => {
   const navigate = useNavigate();
   const { userLeagues } = useLeague();
   const { team } = useRoster();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("roster");
   
   // Find the current league
   const currentLeague = userLeagues.find(league => league.id === leagueId);
+  
   
   if (!currentLeague) {
     return (
@@ -114,23 +117,78 @@ const LeagueDetails = () => {
               </TabsContent>
 
               <TabsContent value="standings" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>League Standings</CardTitle>
-                    <CardDescription>
-                      Current standings for {currentLeague.name}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-12">
-                      <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Standings Coming Soon</h3>
-                      <p className="text-muted-foreground">
-                        League standings and rankings will be available here.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="space-y-6">
+                  {/* League Members Section */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>League Members</CardTitle>
+                      <CardDescription>
+                        Current members in {currentLeague.name}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {currentLeague.members && currentLeague.members.length > 0 ? (
+                          currentLeague.members.map((member, index) => (
+                            <div 
+                              key={member.id}
+                              className="flex items-center justify-between p-4 rounded-lg bg-gradient-card border border-border/50"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className="text-center">
+                                  <div className="text-xs text-muted-foreground">#</div>
+                                  <div className="text-lg font-bold">{index + 1}</div>
+                                </div>
+                                
+                                <div>
+                                  <h3 className="text-lg font-bold">{member.team_name}</h3>
+                                  <p className="text-sm text-muted-foreground">
+                                    {member.is_commissioner ? 'Commissioner' : 'Member'} • Joined {new Date(member.joined_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="text-right">
+                                {member.is_commissioner && (
+                                  <Badge variant="default" className="bg-yellow-500 text-white">
+                                    Admin
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-12">
+                            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">No Members Yet</h3>
+                            <p className="text-muted-foreground">
+                              This league doesn't have any members yet.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Overall Standings Section */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Overall Standings</CardTitle>
+                      <CardDescription>
+                        League rankings and statistics
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center py-12">
+                        <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">Standings Coming Soon</h3>
+                        <p className="text-muted-foreground">
+                          League standings and rankings will be available here.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </div>
           </Tabs>

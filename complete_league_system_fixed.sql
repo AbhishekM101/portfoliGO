@@ -127,8 +127,9 @@ CREATE OR REPLACE FUNCTION make_creator_admin()
 RETURNS TRIGGER AS $$
 BEGIN
   -- When a league is created, automatically add the creator as an admin member
+  -- Use a default team name that can be updated later
   INSERT INTO league_members (league_id, user_id, team_name, is_commissioner)
-  VALUES (NEW.id, NEW.created_by, 'Commissioner', true);
+  VALUES (NEW.id, NEW.created_by, 'My Team', true);
   
   RETURN NEW;
 END;

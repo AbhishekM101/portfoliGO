@@ -53,9 +53,9 @@ export class LeagueService {
         throw error;
       }
 
-      return data.map(league => ({
+      return data.map((league: any) => ({
         ...league,
-        member_count: league.members.length
+        member_count: league.members ? league.members.length : 0
       }));
     } catch (error: any) {
       // If tables don't exist, return empty array
@@ -124,8 +124,8 @@ export class LeagueService {
       }
 
       return {
-        ...data,
-        member_count: data.members.length
+        ...(data as any),
+        member_count: (data as any).members ? (data as any).members.length : 0
       };
     } catch (error: any) {
       // If tables don't exist, return null
@@ -157,7 +157,7 @@ export class LeagueService {
 
       const { data: league, error: leagueError } = await supabase
         .from('leagues')
-        .insert(leagueInsert)
+        .insert(leagueInsert as any)
         .select()
         .single();
 
@@ -172,11 +172,11 @@ export class LeagueService {
       const { error: settingsError } = await supabase
         .from('league_settings')
         .insert({
-          league_id: league.id,
+          league_id: (league as any).id,
           risk_weight: leagueData.risk_weight,
           growth_weight: leagueData.growth_weight,
           value_weight: leagueData.value_weight
-        });
+        } as any);
 
       if (settingsError) {
         if (settingsError.message.includes('relation') || settingsError.message.includes('does not exist')) {
@@ -185,10 +185,22 @@ export class LeagueService {
         throw settingsError;
       }
 
-      // Creator is automatically added as admin via database trigger
+      // Add creator as admin member
+      const { error: memberError } = await supabase
+        .from('league_members')
+        .insert({
+          league_id: (league as any).id,
+          user_id: user.id,
+          team_name: 'My Team',
+          is_commissioner: true
+        } as any);
+
+      if (memberError) {
+        console.error('Error adding creator as admin:', memberError);
+      }
 
       // Get the complete league data
-      const completeLeague = await this.getLeagueByCode(league.code);
+      const completeLeague = await this.getLeagueByCode((league as any).code);
       if (!completeLeague) throw new Error('Failed to retrieve created league');
 
       return completeLeague;
@@ -262,7 +274,7 @@ export class LeagueService {
 
     const { data: member, error } = await supabase
       .from('league_members')
-      .insert(memberInsert)
+      .insert(memberInsert as any)
       .select()
       .single();
 
@@ -304,11 +316,11 @@ export class LeagueService {
       .eq('user_id', user.id)
       .single();
 
-    if (!member?.is_commissioner) {
+    if (!member || !(member as any).is_commissioner) {
       throw new Error('Only commissioners can update league settings');
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('league_settings')
       .update(settings)
       .eq('league_id', leagueId);
