@@ -5,14 +5,27 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AppNavigation } from "@/components/AppNavigation";
-import { TrendingUp, TrendingDown, Minus, BarChart3, Calendar, AlertCircle, RefreshCw } from "lucide-react";
-import { useRoster } from "@/hooks/useRoster";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { TrendingUp, TrendingDown, Minus, BarChart3, Calendar, AlertCircle, RefreshCw, Trash2 } from "lucide-react";
+import { useRoster } from "@/contexts/RosterContext";
 import { Stock } from "@/types/roster";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const Roster = () => {
-  const { team, roster, stats, isLoading, error, refetch } = useRoster();
+  const { team, roster, stats, isLoading, error, refetch, removeStockFromRoster } = useRoster();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const getChangeIcon = (change: number) => {
     if (change > 0) return <TrendingUp className="h-4 w-4 text-bull" />;
@@ -24,6 +37,23 @@ const Roster = () => {
     if (change > 0) return "text-bull";
     if (change < 0) return "text-bear";
     return "text-neutral";
+  };
+
+  const handleRemoveStock = async (stock: Stock) => {
+    try {
+      await removeStockFromRoster(stock.id);
+      
+      toast({
+        title: "Stock Removed",
+        description: `${stock.symbol} has been removed from your roster and is now available.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to remove stock from roster. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Loading state
@@ -248,13 +278,45 @@ const Roster = () => {
                         <div className="text-3xl font-bold mb-2">
                           {stock.totalScore.toFixed(1)}
                         </div>
-                        <div className={`flex items-center gap-1 justify-end ${getChangeColor(stock.change)}`}>
+                        <div className={`flex items-center gap-1 justify-end ${getChangeColor(stock.change)} mb-4`}>
                           {getChangeIcon(stock.change)}
                           <span className="font-mono text-sm">
                             {stock.change > 0 ? '+' : ''}{stock.change.toFixed(1)} 
                             ({stock.changePercent > 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%)
                           </span>
                         </div>
+                        
+                        {/* Remove Stock Button */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remove
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove Stock from Roster</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to remove <strong>{stock.symbol}</strong> from your roster? 
+                                This stock will become available for other teams to add to their rosters.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleRemoveStock(stock)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Remove Stock
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   ))}
