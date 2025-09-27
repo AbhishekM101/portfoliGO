@@ -3,6 +3,8 @@ import numpy as np
 import requests
 import time
 import warnings
+import sys
+from flask import Flask, jsonify, request
 warnings.filterwarnings('ignore')
 
 # Import your API key
@@ -549,5 +551,81 @@ def main():
     else:
         print("No valid results obtained. Check API key and connectivity.")
 
+# ====================================================
+# Flask Web API Endpoints
+# ====================================================
+
+app = Flask(__name__)
+
+@app.route('/api/value/<symbol>')
+def get_value_score(symbol):
+    """Get value score for a single stock symbol"""
+    try:
+        print(f"Getting value score for {symbol}...")
+        calculator = ValueScoreCalculator()
+        stock_data = calculator.fetch_stock_data(symbol)
+        
+        if stock_data:
+            scores = calculator.calculate_value_score(stock_data)
+            return jsonify({
+                'symbol': symbol,
+                'valueScore': float(scores['composite_score']),
+                'peScore': float(scores['pe_score']),
+                'pegScore': float(scores['peg_score']),
+                'fcfScore': float(scores['fcf_score']),
+                'roeScore': float(scores['roe_score']),
+                'debtScore': float(scores['debt_score']),
+                'epsScore': float(scores['eps_score']),
+                'status': 'success'
+            })
+        else:
+            return jsonify({'error': 'No data found for symbol'}), 404
+    except Exception as e:
+        print(f"Error getting value score for {symbol}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/value/bulk', methods=['POST'])
+def get_bulk_value_scores():
+    """Get value scores for multiple stock symbols"""
+    try:
+        data = request.get_json()
+        symbols = data.get('symbols', [])
+        if not symbols:
+            return jsonify({'error': 'No symbols provided'}), 400
+        
+        print(f"Getting value scores for {len(symbols)} symbols...")
+        calculator = ValueScoreCalculator()
+        results = calculator.analyze_stocks(symbols)
+        
+        if results is not None and not results.empty:
+            scores = []
+            for _, row in results.iterrows():
+                scores.append({
+                    'symbol': row['Symbol'],
+                    'valueScore': float(row['Value_Score']),
+                    'peScore': float(row['PE_Score']),
+                    'pegScore': float(row['PEG_Score']),
+                    'fcfScore': float(row['FCF_Score']),
+                    'roeScore': float(row['ROE_Score']),
+                    'debtScore': float(row['Debt_Score']),
+                    'epsScore': float(row['EPS_Score'])
+                })
+            return jsonify({'scores': scores, 'status': 'success'})
+        else:
+            return jsonify({'error': 'No data found'}), 404
+    except Exception as e:
+        print(f"Error getting bulk value scores: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/value/health')
+def health_check():
+    """Health check endpoint"""
+    return jsonify({'status': 'healthy', 'service': 'value_model'})
+
 if __name__ == "__main__":
-    main()
+    # Check if running as web server or training script
+    if len(sys.argv) > 1 and sys.argv[1] == '--server':
+        print("Starting Value Model API server on port 5003...")
+        app.run(host='0.0.0.0', port=5003, debug=True)
+    else:
+        main()
