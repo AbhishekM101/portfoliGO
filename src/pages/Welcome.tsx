@@ -25,7 +25,7 @@ const Welcome = () => {
 
   // Redirect if user is already logged in
   if (user) {
-    navigate("/roster");
+    navigate("/home");
     return null;
   }
 
@@ -75,7 +75,7 @@ const Welcome = () => {
             title: "Welcome back!",
             description: "You've successfully signed in.",
           });
-          navigate("/roster");
+          navigate("/home");
         }
       } else {
         const { error } = await signUp(formData.email, formData.password, formData.teamName);

@@ -22,7 +22,11 @@ import { Stock } from "@/types/roster";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
-const Roster = () => {
+interface RosterProps {
+  onNavigateToPlayers?: () => void;
+}
+
+const Roster = ({ onNavigateToPlayers }: RosterProps) => {
   const { team, roster, stats, isLoading, error, refetch, removeStockFromRoster } = useRoster();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -60,7 +64,6 @@ const Roster = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <AppNavigation />
         <div className="max-w-6xl mx-auto p-6">
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
@@ -105,7 +108,6 @@ const Roster = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <AppNavigation />
         <div className="max-w-6xl mx-auto p-6">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -124,8 +126,6 @@ const Roster = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppNavigation />
-      
       <div className="max-w-6xl mx-auto p-6">
         {/* Team Overview */}
         <div className="mb-8">
@@ -220,7 +220,7 @@ const Roster = () => {
                 <p className="text-muted-foreground mb-4">
                   Start building your fantasy stock portfolio by adding stocks.
                 </p>
-                <Button onClick={() => navigate('/players')}>
+                <Button onClick={() => onNavigateToPlayers ? onNavigateToPlayers() : navigate('/players')}>
                   Add Stocks
                 </Button>
               </div>

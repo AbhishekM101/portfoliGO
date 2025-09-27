@@ -8,11 +8,8 @@ import { LeagueProvider } from "@/contexts/LeagueContext";
 import { RosterProvider } from "@/contexts/RosterContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
-import Roster from "./pages/Roster";
-import League from "./pages/League";
-import Matchup from "./pages/Matchup";
-import Players from "./pages/Players";
-import LeagueDashboard from "./pages/LeagueDashboard";
+import Home from "./pages/Home";
+import LeagueDetails from "./pages/LeagueDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,25 +25,14 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-                <Route path="/league" element={<League />} />
-                <Route path="/league/:leagueId" element={
-                  <ProtectedRoute>
-                    <LeagueDashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/roster" element={
+              <Route path="/home" element={
                 <ProtectedRoute>
-                  <Roster />
+                  <Home />
                 </ProtectedRoute>
               } />
-              <Route path="/matchup" element={
+              <Route path="/league/:leagueId" element={
                 <ProtectedRoute>
-                  <Matchup />
-                </ProtectedRoute>
-              } />
-              <Route path="/players" element={
-                <ProtectedRoute>
-                  <Players />
+                  <LeagueDetails />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
