@@ -23,94 +23,16 @@ import {
 } from "lucide-react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRoster } from "@/contexts/RosterContext";
 import { Stock } from "@/types/roster";
+import { useToast } from "@/hooks/use-toast";
+import { DraftService, DraftSession, DraftPick, UserRoster, TeamMember } from "@/services/draftService";
 
-// Mock draft data
-const mockDraftableStocks: Stock[] = [
-  {
-    id: "1",
-    symbol: "AAPL",
-    company: "Apple Inc.",
-    sector: "Technology",
-    totalScore: 87.5,
-    growthScore: 92,
-    valueScore: 78,
-    riskScore: 85,
-    change: 62.2,
-    changePercent: 2.7,
-    draftPosition: 1,
-    price: 175.43,
-    marketCap: 2800000000000,
-    volume: 45000000
-  },
-  {
-    id: "2",
-    symbol: "TSLA",
-    company: "Tesla Inc.",
-    sector: "Automotive",
-    totalScore: 65.4,
-    growthScore: 88,
-    valueScore: 45,
-    riskScore: 78,
-    change: 48.7,
-    changePercent: 8.2,
-    draftPosition: 2,
-    price: 245.67,
-    marketCap: 780000000000,
-    volume: 35000000
-  },
-  {
-    id: "3",
-    symbol: "NVDA",
-    company: "NVIDIA Corporation",
-    sector: "Technology",
-    totalScore: 93.1,
-    growthScore: 95,
-    valueScore: 88,
-    riskScore: 90,
-    change: 2.0,
-    changePercent: 1.2,
-    draftPosition: 3,
-    price: 420.15,
-    marketCap: 1000000000000,
-    volume: 25000000
-  },
-  {
-    id: "4",
-    symbol: "AMZN",
-    company: "Amazon.com Inc.",
-    sector: "Consumer Discretionary",
-    totalScore: 89.2,
-    growthScore: 85,
-    valueScore: 92,
-    riskScore: 88,
-    change: 15.3,
-    changePercent: 0.9,
-    draftPosition: 4,
-    price: 145.32,
-    marketCap: 1500000000000,
-    volume: 40000000
-  },
-  {
-    id: "5",
-    symbol: "META",
-    company: "Meta Platforms Inc.",
-    sector: "Technology",
-    totalScore: 76.8,
-    growthScore: 82,
-    valueScore: 70,
-    riskScore: 78,
-    change: 8.7,
-    changePercent: -1.4,
-    draftPosition: 5,
-    price: 320.45,
-    marketCap: 850000000000,
-    volume: 20000000
-  }
-];
+// Mock teams for draft order
 
-const mockTeams = [
-  { id: "1", name: "Tech Titans", owner: "John Doe", picks: [] },
+// Mock teams for draft order - in a real implementation, this would come from the league data
+const getMockTeams = (userTeamName: string) => [
+  { id: "1", name: userTeamName, owner: "You", picks: [] },
   { id: "2", name: "Growth Gurus", owner: "Jane Smith", picks: [] },
   { id: "3", name: "Value Vault", owner: "Mike Johnson", picks: [] },
   { id: "4", name: "Risk Raiders", owner: "Sarah Wilson", picks: [] }
@@ -121,20 +43,93 @@ const Draft = () => {
   const navigate = useNavigate();
   const { userLeagues } = useLeague();
   const { user } = useAuth();
+  const { availableStocks } = useRoster();
+  const { toast } = useToast();
   
   const [searchQuery, setSearchQuery] = useState("");
-  const [draftableStocks] = useState(mockDraftableStocks);
-  const [teams] = useState(mockTeams);
-  const [currentPick, setCurrentPick] = useState(1);
-  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
-  const [draftStatus, setDraftStatus] = useState<'waiting' | 'active' | 'paused' | 'completed'>('waiting');
-  const [timeRemaining, setTimeRemaining] = useState(90); // 90 seconds per pick
-  const [draftedStocks, setDraftedStocks] = useState<Stock[]>([]);
-  const [draftPicks, setDraftPicks] = useState<{pick: number, team: string, stock: Stock}[]>([]);
+  const [draftSession, setDraftSession] = useState<DraftSession | null>(null);
+  const [draftPicks, setDraftPicks] = useState<DraftPick[]>([]);
+  const [userRoster, setUserRoster] = useState<UserRoster[]>([]);
+  const [leagueMembers, setLeagueMembers] = useState<TeamMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Find the current league
   const currentLeague = userLeagues.find(league => league.id === leagueId);
   
+  // Load initial data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      if (!leagueId) return;
+      
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Load draft session
+        const session = await DraftService.getDraftSession(leagueId);
+        setDraftSession(session);
+        
+        // Load league members
+        const members = await DraftService.getLeagueMembers(leagueId);
+        setLeagueMembers(members);
+        
+        // Load user roster
+        const roster = await DraftService.getUserRoster(leagueId);
+        setUserRoster(roster);
+        
+        // Load draft picks if session exists
+        if (session) {
+          const picks = await DraftService.getDraftPicks(session.id);
+          setDraftPicks(picks);
+        }
+        
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load draft data');
+        toast({
+          title: "Error",
+          description: "Failed to load draft data. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadInitialData();
+  }, [leagueId, toast]);
+  
+  // Set up real-time subscriptions
+  useEffect(() => {
+    if (!leagueId || !user?.id) return;
+    
+    const subscriptions: any[] = [];
+    
+    // Subscribe to draft session updates
+    const sessionSubscription = DraftService.subscribeToDraftSession(
+      leagueId,
+      (session) => {
+        setDraftSession(session);
+        if (session) {
+          // Load picks when session updates
+          DraftService.getDraftPicks(session.id).then(setDraftPicks);
+        }
+      }
+    );
+    subscriptions.push(sessionSubscription);
+    
+    // Subscribe to user roster updates
+    const rosterSubscription = DraftService.subscribeToUserRoster(
+      leagueId,
+      user.id,
+      setUserRoster
+    );
+    subscriptions.push(rosterSubscription);
+    
+    return () => {
+      subscriptions.forEach(sub => sub.unsubscribe());
+    };
+  }, [leagueId, user?.id]);
   
   if (!currentLeague) {
     return (
@@ -167,82 +162,159 @@ const Draft = () => {
     return "text-gray-500";
   };
 
-  const filteredStocks = draftableStocks.filter(stock => {
+  // Get current user's team info
+  const currentUserTeam = leagueMembers.find(member => member.user_id === user?.id);
+  const isCurrentUserTurn = draftSession && 
+    leagueMembers[draftSession.current_team_index]?.user_id === user?.id;
+  
+  // Filter available stocks
+  const filteredStocks = availableStocks.filter(stock => {
     const matchesSearch = stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          stock.company.toLowerCase().includes(searchQuery.toLowerCase());
-    const notDrafted = !draftedStocks.some(drafted => drafted.id === stock.id);
-    return matchesSearch && notDrafted;
+    const notDrafted = !draftPicks.some(pick => pick.stock_data.symbol === stock.symbol);
+    const notInRoster = !userRoster.some(rosterStock => rosterStock.stock_data.symbol === stock.symbol);
+    return matchesSearch && notDrafted && notInRoster;
   });
 
-  const handleDraftStock = (stock: Stock) => {
-    const pickData = {
-      pick: currentPick,
-      team: teams[currentTeamIndex].name,
-      stock: stock
-    };
+  const handleDraftStock = async (stock: Stock) => {
+    if (!draftSession) {
+      toast({
+        title: "No Active Draft",
+        description: "There is no active draft session.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    setDraftedStocks(prev => [...prev, stock]);
-    setDraftPicks(prev => [...prev, pickData]);
-    setCurrentPick(prev => prev + 1);
-    setCurrentTeamIndex(prev => (prev + 1) % teams.length);
-    setTimeRemaining(90); // Reset timer for next pick
+    if (!isCurrentUserTurn) {
+      toast({
+        title: "Not Your Turn",
+        description: "It's not your turn to pick.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    // Check if draft is complete
-    if (currentPick >= teams.length * 5) {
-      setDraftStatus('completed');
+    try {
+      await DraftService.makeDraftPick(draftSession.id, stock.symbol, stock);
+      
+      toast({
+        title: "Stock Drafted!",
+        description: `${stock.symbol} has been added to your roster.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Draft Error",
+        description: error instanceof Error ? error.message : "Failed to draft stock. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const startDraft = () => {
-    setDraftStatus('active');
-  };
-
-  const pauseDraft = () => {
-    setDraftStatus('paused');
-  };
-
-  const resumeDraft = () => {
-    setDraftStatus('active');
-  };
-
-  const resetDraft = () => {
-    setDraftStatus('waiting');
-    setCurrentPick(1);
-    setCurrentTeamIndex(0);
-    setDraftedStocks([]);
-    setDraftPicks([]);
-    setTimeRemaining(90);
-  };
-
-  // Timer effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
+  const startDraft = async () => {
+    if (!leagueId) return;
     
-    if (draftStatus === 'active' && timeRemaining > 0) {
-      interval = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            // Auto-pick the highest available stock when time runs out
-            const availableStocks = draftableStocks.filter(stock => 
-              !draftedStocks.some(drafted => drafted.id === stock.id)
-            );
-            if (availableStocks.length > 0) {
-              const highestStock = availableStocks.reduce((highest, current) => 
-                current.totalScore > highest.totalScore ? current : highest
-              );
-              handleDraftStock(highestStock);
-            }
-            return 90;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    try {
+      await DraftService.startDraft(leagueId);
+      toast({
+        title: "Draft Started!",
+        description: "The draft has been started successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error Starting Draft",
+        description: error instanceof Error ? error.message : "Failed to start draft.",
+        variant: "destructive",
+      });
     }
+  };
+
+  const pauseDraft = async () => {
+    if (!draftSession) return;
     
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [draftStatus, timeRemaining, draftedStocks, draftableStocks]);
+    try {
+      await DraftService.updateDraftStatus(draftSession.id, 'paused');
+      toast({
+        title: "Draft Paused",
+        description: "The draft has been paused.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error Pausing Draft",
+        description: error instanceof Error ? error.message : "Failed to pause draft.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resumeDraft = async () => {
+    if (!draftSession) return;
+    
+    try {
+      await DraftService.updateDraftStatus(draftSession.id, 'active');
+      toast({
+        title: "Draft Resumed",
+        description: "The draft has been resumed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error Resuming Draft",
+        description: error instanceof Error ? error.message : "Failed to resume draft.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetDraft = async () => {
+    if (!draftSession) return;
+    
+    try {
+      await DraftService.resetDraftSession(draftSession.id);
+      toast({
+        title: "Draft Reset",
+        description: "The draft has been reset.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error Resetting Draft",
+        description: error instanceof Error ? error.message : "Failed to reset draft.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-6xl mx-auto p-6">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold mb-2">Loading Draft...</h3>
+            <p className="text-muted-foreground">Setting up the draft session</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-6xl mx-auto p-6">
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Error Loading Draft</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -262,17 +334,25 @@ const Draft = () => {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold">{currentLeague.name} Draft</h1>
-                <p className="text-muted-foreground">Live Draft • Round {Math.ceil(currentPick / teams.length)} • Pick {currentPick}</p>
+                <p className="text-muted-foreground">
+                  {draftSession ? (
+                    <>Live Draft • Round {Math.ceil(draftSession.current_pick / leagueMembers.length)} • Pick {draftSession.current_pick}</>
+                  ) : (
+                    'No active draft session'
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Badge variant={draftStatus === 'active' ? 'default' : 'secondary'}>
-                {draftStatus === 'active' ? 'LIVE' : draftStatus === 'paused' ? 'PAUSED' : 'WAITING'}
+              <Badge variant={draftSession?.status === 'active' ? 'default' : 'secondary'}>
+                {draftSession?.status === 'active' ? 'LIVE' : draftSession?.status === 'paused' ? 'PAUSED' : 'WAITING'}
               </Badge>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span className="font-mono">{timeRemaining}s</span>
-              </div>
+              {draftSession && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  <span className="font-mono">{draftSession.time_remaining}s</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -289,47 +369,52 @@ const Draft = () => {
                   <div>
                     <CardTitle className="text-lg">Draft Controls</CardTitle>
                     <CardDescription>
-                      {draftStatus === 'waiting' && 'Ready to start the draft'}
-                      {draftStatus === 'active' && `Pick ${currentPick} - ${teams[currentTeamIndex].name} is on the clock`}
-                      {draftStatus === 'paused' && 'Draft is paused'}
+                      {!draftSession && 'Ready to start the draft'}
+                      {draftSession?.status === 'active' && (
+                        <>Pick {draftSession.current_pick} - {leagueMembers[draftSession.current_team_index]?.team_name} is on the clock</>
+                      )}
+                      {draftSession?.status === 'paused' && 'Draft is paused'}
+                      {draftSession?.status === 'completed' && 'Draft completed successfully'}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    {draftStatus === 'waiting' && (
+                    {!draftSession && (
                       <Button onClick={startDraft} className="bg-green-600 hover:bg-green-700">
                         <Play className="h-4 w-4 mr-2" />
                         Start Draft
                       </Button>
                     )}
-                    {draftStatus === 'active' && (
+                    {draftSession?.status === 'active' && (
                       <Button onClick={pauseDraft} variant="outline">
                         <Pause className="h-4 w-4 mr-2" />
                         Pause
                       </Button>
                     )}
-                    {draftStatus === 'paused' && (
+                    {draftSession?.status === 'paused' && (
                       <Button onClick={resumeDraft} className="bg-green-600 hover:bg-green-700">
                         <Play className="h-4 w-4 mr-2" />
                         Resume
                       </Button>
                     )}
-                    <Button onClick={resetDraft} variant="outline">
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Reset
-                    </Button>
+                    {draftSession && (
+                      <Button onClick={resetDraft} variant="outline">
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Reset
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                {draftStatus === 'active' && (
+                {draftSession?.status === 'active' && (
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      <strong>{teams[currentTeamIndex].name}</strong> is on the clock with {timeRemaining} seconds remaining.
+                      <strong>{leagueMembers[draftSession.current_team_index]?.team_name}</strong> is on the clock with {draftSession.time_remaining} seconds remaining.
                     </AlertDescription>
                   </Alert>
                 )}
-                {draftStatus === 'completed' && (
+                {draftSession?.status === 'completed' && (
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
@@ -346,9 +431,9 @@ const Draft = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg">Available Players</CardTitle>
-                    <CardDescription>
-                      {filteredStocks.length} stocks available to draft
-                    </CardDescription>
+                <CardDescription>
+                  {filteredStocks.length} stocks available to draft • Your roster: {userRoster.length} stocks
+                </CardDescription>
                   </div>
                   <div className="relative w-64">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -427,10 +512,12 @@ const Draft = () => {
                         </div>
                         <Button 
                           onClick={() => handleDraftStock(stock)}
-                          disabled={draftStatus !== 'active'}
+                          disabled={!draftSession || draftSession.status !== 'active' || !isCurrentUserTurn}
                           className="w-full"
                         >
-                          Draft
+                          {!draftSession ? 'No Draft' : 
+                           draftSession.status !== 'active' ? 'Draft Paused' :
+                           !isCurrentUserTurn ? 'Not Your Turn' : 'Draft'}
                         </Button>
                       </div>
                     </div>
@@ -447,40 +534,56 @@ const Draft = () => {
               <CardHeader>
                 <CardTitle className="text-lg">Draft Order</CardTitle>
                 <CardDescription>
-                  Current pick: {currentPick} of {teams.length * 5}
+                  Current pick: {draftSession?.current_pick || 0} of {leagueMembers.length * 5}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {teams.map((team, index) => (
-                    <div 
-                      key={team.id}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
-                        index === currentTeamIndex && draftStatus === 'active' 
-                          ? 'bg-primary/10 border-primary border' 
-                          : 'bg-muted/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-bold">{index + 1}</span>
-                        </div>
-                        <div>
-                          <div className="font-medium">{team.name}</div>
-                          <div className="text-xs text-muted-foreground">{team.owner}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-mono">{team.picks.length}/5</div>
-                        {index === currentTeamIndex && draftStatus === 'active' && (
-                          <div className="flex items-center gap-1 text-primary text-xs">
-                            <Clock className="h-3 w-3" />
-                            On Clock
+                  {leagueMembers.map((member, index) => {
+                    const memberPicks = draftPicks.filter(pick => pick.team_id === member.id);
+                    const isCurrentTeam = draftSession && index === draftSession.current_team_index;
+                    const isUserTeam = member.user_id === user?.id;
+                    
+                    return (
+                      <div 
+                        key={member.id}
+                        className={`flex items-center justify-between p-3 rounded-lg ${
+                          isCurrentTeam && draftSession?.status === 'active' 
+                            ? 'bg-primary/10 border-primary border' 
+                            : 'bg-muted/50'
+                        } ${isUserTeam ? 'ring-2 ring-blue-200' : ''}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-bold">{index + 1}</span>
                           </div>
-                        )}
+                          <div>
+                            <div className="font-medium flex items-center gap-2">
+                              {member.team_name}
+                              {isUserTeam && (
+                                <Badge variant="secondary" className="text-xs">You</Badge>
+                              )}
+                              {member.is_commissioner && (
+                                <Badge variant="default" className="text-xs">Admin</Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {member.user_id === user?.id ? 'You' : 'Member'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-mono">{memberPicks.length}/5</div>
+                          {isCurrentTeam && draftSession?.status === 'active' && (
+                            <div className="flex items-center gap-1 text-primary text-xs">
+                              <Clock className="h-3 w-3" />
+                              On Clock
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -501,23 +604,26 @@ const Draft = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {draftPicks.slice(-5).reverse().map((pick, index) => (
-                      <div key={`${pick.pick}-${pick.stock.id}`} className="flex items-center justify-between p-2 rounded bg-muted/50">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-gradient-to-br from-primary/20 to-accent/20 rounded flex items-center justify-center">
-                            <span className="text-xs font-bold">{pick.stock.symbol.charAt(0)}</span>
+                    {draftPicks.slice(-5).reverse().map((pick) => {
+                      const teamMember = leagueMembers.find(member => member.id === pick.team_id);
+                      return (
+                        <div key={`${pick.pick_number}-${pick.stock_id}`} className="flex items-center justify-between p-2 rounded bg-muted/50">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-gradient-to-br from-primary/20 to-accent/20 rounded flex items-center justify-center">
+                              <span className="text-xs font-bold">{pick.stock_data.symbol.charAt(0)}</span>
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm">{pick.stock_data.symbol}</div>
+                              <div className="text-xs text-muted-foreground">{teamMember?.team_name || 'Unknown Team'}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="font-medium text-sm">{pick.stock.symbol}</div>
-                            <div className="text-xs text-muted-foreground">{pick.team}</div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold">{pick.stock_data.totalScore.toFixed(1)}</div>
+                            <div className="text-xs text-muted-foreground">Pick {pick.pick_number}</div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold">{pick.stock.totalScore.toFixed(1)}</div>
-                          <div className="text-xs text-muted-foreground">Pick {pick.pick}</div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -528,12 +634,12 @@ const Draft = () => {
               <CardHeader>
                 <CardTitle className="text-lg">Draft Progress</CardTitle>
                 <CardDescription>
-                  {draftPicks.length} of {teams.length * 5} picks completed
+                  {draftPicks.length} of {leagueMembers.length * 5} picks completed
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Progress value={(draftPicks.length / (teams.length * 5)) * 100} className="h-3" />
+                  <Progress value={(draftPicks.length / (leagueMembers.length * 5)) * 100} className="h-3" />
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <div className="text-muted-foreground">Completed</div>
@@ -541,7 +647,7 @@ const Draft = () => {
                     </div>
                     <div>
                       <div className="text-muted-foreground">Remaining</div>
-                      <div className="font-bold">{(teams.length * 5) - draftPicks.length}</div>
+                      <div className="font-bold">{(leagueMembers.length * 5) - draftPicks.length}</div>
                     </div>
                   </div>
                 </div>
