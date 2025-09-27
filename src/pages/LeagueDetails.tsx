@@ -62,6 +62,12 @@ const LeagueDetails = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <Button 
+                onClick={() => navigate(`/league/${leagueId}/draft`)}
+                className="bg-primary hover:bg-primary/90"
+              >
+                Start Draft
+              </Button>
               <Badge variant="outline">{currentLeague.status.replace('_', ' ')}</Badge>
               <div className="text-sm text-muted-foreground">
                 {currentLeague.member_count || 0}/{currentLeague.max_players} Players

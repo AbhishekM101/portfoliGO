@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import LeagueDetails from "./pages/LeagueDetails";
+import Draft from "./pages/Draft";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,11 @@ const App = () => (
               <Route path="/league/:leagueId" element={
                 <ProtectedRoute>
                   <LeagueDetails />
+                </ProtectedRoute>
+              } />
+              <Route path="/league/:leagueId/draft" element={
+                <ProtectedRoute>
+                  <Draft />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
