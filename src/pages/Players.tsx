@@ -13,11 +13,8 @@ import {
   Minus, 
   Search, 
   Filter, 
-  Flag, 
   BarChart3, 
   Plus,
-  Lock,
-  ChevronDown,
   LineChart
 } from "lucide-react";
 import { Stock } from "@/types/roster";
@@ -154,10 +151,6 @@ const Players = () => {
                 <Filter className="h-4 w-4 mr-2" />
                 Filter
               </Button>
-              <Button variant="outline" size="sm">
-                <Flag className="h-4 w-4 mr-2" />
-                Watchlist
-              </Button>
             </div>
           </div>
 
@@ -180,15 +173,9 @@ const Players = () => {
         {/* Trending Players Section */}
         <Card className="mb-8">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">TRENDING PLAYERS</CardTitle>
-                <LineChart className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="default" size="sm" className="text-xs">Trending</Button>
-                <Button variant="outline" size="sm" className="text-xs">Recommended</Button>
-              </div>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">TRENDING PLAYERS</CardTitle>
+              <LineChart className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
@@ -233,15 +220,9 @@ const Players = () => {
         {/* Available Players Section */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">AVAILABLE</CardTitle>
-                <LineChart className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <Button variant="outline" size="sm">
-                Matchup Stats
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">AVAILABLE</CardTitle>
+              <LineChart className="h-4 w-4 text-muted-foreground" />
             </div>
             <CardDescription>
               {filteredStocks.length} stocks available to add to your roster
