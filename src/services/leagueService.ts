@@ -303,7 +303,16 @@ export class LeagueService {
   // Update league settings (commissioner only)
   static async updateLeagueSettings(
     leagueId: string, 
-    settings: { risk_weight: number; growth_weight: number; value_weight: number }
+    settings: { 
+      name?: string;
+      description?: string;
+      is_public?: boolean;
+      max_players?: number;
+      roster_size?: number;
+      risk_weight?: number; 
+      growth_weight?: number; 
+      value_weight?: number;
+    }
   ): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
@@ -320,12 +329,43 @@ export class LeagueService {
       throw new Error('Only commissioners can update league settings');
     }
 
-    const { error } = await (supabase as any)
-      .from('league_settings')
-      .update(settings)
-      .eq('league_id', leagueId);
+    // Update league basic info
+    const leagueUpdate: any = {};
+    if (settings.name !== undefined) leagueUpdate.name = settings.name;
+    if (settings.description !== undefined) leagueUpdate.description = settings.description;
+    if (settings.is_public !== undefined) leagueUpdate.is_public = settings.is_public;
+    if (settings.max_players !== undefined) leagueUpdate.max_players = settings.max_players;
+    if (settings.roster_size !== undefined) leagueUpdate.roster_size = settings.roster_size;
 
-    if (error) throw error;
+    if (Object.keys(leagueUpdate).length > 0) {
+      const { error: leagueError } = await (supabase as any)
+        .from('leagues')
+        .update(leagueUpdate)
+        .eq('id', leagueId);
+
+      if (leagueError) {
+        console.error('League update error:', leagueError);
+        throw leagueError;
+      }
+    }
+
+    // Update league settings
+    const settingsUpdate: any = {};
+    if (settings.risk_weight !== undefined) settingsUpdate.risk_weight = settings.risk_weight;
+    if (settings.growth_weight !== undefined) settingsUpdate.growth_weight = settings.growth_weight;
+    if (settings.value_weight !== undefined) settingsUpdate.value_weight = settings.value_weight;
+
+    if (Object.keys(settingsUpdate).length > 0) {
+      const { error: settingsError } = await (supabase as any)
+        .from('league_settings')
+        .update(settingsUpdate)
+        .eq('league_id', leagueId);
+
+      if (settingsError) {
+        console.error('Settings update error:', settingsError);
+        throw settingsError;
+      }
+    }
   }
 
   // Get league standings (placeholder for future implementation)

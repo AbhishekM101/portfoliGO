@@ -208,7 +208,7 @@ export const RosterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       
       // Convert Supabase data to Stock format
-      const stocks: Stock[] = (stocksData || []).map(stock => ({
+      const stocks: Stock[] = (stocksData || []).map((stock: any) => ({
         id: stock.id,
         symbol: stock.symbol,
         company: stock.company,
@@ -386,7 +386,7 @@ export const RosterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       
       // Convert Supabase data to Stock format
-      const stocks: Stock[] = (stocksData || []).map(stock => ({
+      const stocks: Stock[] = (stocksData || []).map((stock: any) => ({
         id: stock.id,
         symbol: stock.symbol,
         company: stock.company,

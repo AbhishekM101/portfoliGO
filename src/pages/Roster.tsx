@@ -190,7 +190,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                 <h1 className="text-3xl font-bold mb-2">
                   {team?.name || "Your Team"}
                 </h1>
-                <p className="text-muted-foreground">Your fantasy stock portfolio</p>
+                <p className="text-muted-foreground">Your PortfolioGO stock portfolio</p>
               </div>
               {roster.length > 0 && (
                 <Dialog>
