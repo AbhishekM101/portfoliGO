@@ -573,42 +573,27 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                           
                           {/* Score Breakdown */}
                           <div className="grid grid-cols-3 gap-4 mt-4">
-                            <div>
-                              <div className="text-xs text-muted-foreground mb-1">Growth</div>
-                              <div className="flex items-center gap-2">
-                                <Progress value={stock.growthScore} className="h-2 flex-1" />
-                                <span className="text-xs font-mono w-8">{stock.growthScore}</span>
-                              </div>
-                            </div>
-                            <div>
-                              <div className="text-xs text-muted-foreground mb-1">Value</div>
-                              <div className="flex items-center gap-2">
-                                <Progress value={stock.valueScore} className="h-2 flex-1" />
-                                <span className="text-xs font-mono w-8">{stock.valueScore}</span>
-                              </div>
-                            </div>
-                            <div>
-                              <div className="text-xs text-muted-foreground mb-1">Risk</div>
-                              <div className="flex items-center gap-2">
-                                <Progress value={stock.riskScore} className="h-2 flex-1" />
-                                <span className="text-xs font-mono w-8">{stock.riskScore}</span>
-                              </div>
-                            </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1">Growth</div>
+                            <span className="text-lg font-bold text-green-600">{stock.growthScore}</span>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1">Value</div>
+                            <span className="text-lg font-bold text-blue-600">{stock.valueScore}</span>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1">Risk</div>
+                            <span className="text-lg font-bold text-red-600">{stock.riskScore}</span>
+                          </div>
                           </div>
                         </div>
                       </div>
                       
                       <div className="text-right">
-                        <div className="text-3xl font-bold mb-2">
+                        <div className="text-3xl font-bold mb-1">
                           {stock.totalScore.toFixed(1)}
                         </div>
-                        <div className={`flex items-center gap-1 justify-end ${getChangeColor(stock.change)} mb-4`}>
-                          {getChangeIcon(stock.change)}
-                          <span className="font-mono text-sm">
-                            {stock.change > 0 ? '+' : ''}{stock.change.toFixed(1)} 
-                            ({stock.changePercent > 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%)
-                          </span>
-                        </div>
+                        <div className="text-xs text-muted-foreground mb-4">Preference-Based Average</div>
                         
                         {/* Remove Stock Button */}
                         <AlertDialog>
