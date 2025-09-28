@@ -21,66 +21,18 @@ import { useToast } from "@/hooks/use-toast";
 import { useRoster } from "@/contexts/RosterContext";
 
 
-const mockTrendingStocks = [
-  {
-    id: "1",
-    symbol: "AAPL",
-    company: "Apple Inc.",
-    sector: "Technology",
-    totalScore: 87.5,
-    change: 62.2,
-    changePercent: 2.7,
-    rosteredPercent: 64
-  },
-  {
-    id: "2",
-    symbol: "TSLA",
-    company: "Tesla Inc.",
-    sector: "Automotive",
-    totalScore: 65.4,
-    change: 48.7,
-    changePercent: 8.2,
-    rosteredPercent: 60
-  },
-  {
-    id: "3",
-    symbol: "NVDA",
-    company: "NVIDIA Corporation",
-    sector: "Technology",
-    totalScore: 93.1,
-    change: 2.0,
-    changePercent: 1.2,
-    rosteredPercent: 79
-  },
-  {
-    id: "4",
-    symbol: "AMZN",
-    company: "Amazon.com Inc.",
-    sector: "Consumer Discretionary",
-    totalScore: 89.2,
-    change: 15.3,
-    changePercent: 0.9,
-    rosteredPercent: 45
-  },
-  {
-    id: "5",
-    symbol: "META",
-    company: "Meta Platforms Inc.",
-    sector: "Technology",
-    totalScore: 76.8,
-    change: 8.7,
-    changePercent: -1.4,
-    rosteredPercent: 38
-  }
-];
 
 
 const Players = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSector, setSelectedSector] = useState("All");
-  const [trendingStocks] = useState(mockTrendingStocks);
   const { toast } = useToast();
   const { roster, availableStocks, addStockToRoster } = useRoster();
+
+  // Get top performing stocks for trending section
+  const trendingStocks = availableStocks
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .slice(0, 5);
 
   const sectors = ["All", "Technology", "Healthcare", "Financial", "Consumer Discretionary", "Communication Services", "Automotive"];
 
@@ -175,11 +127,11 @@ const Players = () => {
           </div>
         </div>
 
-        {/* Trending Players Section */}
+        {/* Top Performers Section */}
         <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">TRENDING PLAYERS</CardTitle>
+              <CardTitle className="text-lg">TOP PERFORMERS</CardTitle>
               <LineChart className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
@@ -198,22 +150,38 @@ const Players = () => {
                       </Badge>
                     </div>
                     
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Rost {stock.rosteredPercent}%</span>
-                        <div className={`flex items-center gap-1 ${getChangeColor(stock.change)}`}>
-                          {getChangeIcon(stock.change)}
-                          <span className="font-mono">+{stock.change.toFixed(1)}</span>
+                    <div className="space-y-3 mb-4">
+                      {/* ML Metrics */}
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div>
+                          <div className="text-lg font-bold text-green-600">{stock.growthScore}</div>
+                          <div className="text-xs text-muted-foreground">Growth</div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold text-red-600">{stock.riskScore}</div>
+                          <div className="text-xs text-muted-foreground">Risk</div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold text-blue-600">{stock.valueScore}</div>
+                          <div className="text-xs text-muted-foreground">Value</div>
                         </div>
                       </div>
-                      <Progress value={stock.rosteredPercent} className="h-2" />
+                      
+                      {/* Price Change */}
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Price: ${stock.price}</span>
+                        <div className={`flex items-center gap-1 ${getChangeColor(stock.changePercent)}`}>
+                          {getChangeIcon(stock.changePercent)}
+                          <span className="font-mono">{stock.changePercent > 0 ? '+' : ''}{stock.changePercent.toFixed(1)}%</span>
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="text-center">
                       <div className="text-2xl font-bold mb-1">
                         {stock.totalScore.toFixed(1)}
                       </div>
-                      <div className="text-xs text-muted-foreground">Total Score</div>
+                      <div className="text-xs text-muted-foreground">Preference-Based Average</div>
                     </div>
                   </CardContent>
                 </Card>
@@ -222,11 +190,11 @@ const Players = () => {
           </CardContent>
         </Card>
 
-        {/* Available Players Section */}
+        {/* All Stocks Section */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">AVAILABLE</CardTitle>
+              <CardTitle className="text-lg">ALL STOCKS</CardTitle>
               <LineChart className="h-4 w-4 text-muted-foreground" />
             </div>
             <CardDescription>
@@ -270,40 +238,25 @@ const Players = () => {
                         <div className="grid grid-cols-3 gap-4">
                           <div>
                             <div className="text-xs text-muted-foreground mb-1">Growth</div>
-                            <div className="flex items-center gap-2">
-                              <Progress value={stock.growthScore} className="h-2 flex-1" />
-                              <span className="text-xs font-mono w-8">{stock.growthScore}</span>
-                            </div>
+                            <span className="text-lg font-bold text-green-600">{stock.growthScore}</span>
                           </div>
                           <div>
                             <div className="text-xs text-muted-foreground mb-1">Value</div>
-                            <div className="flex items-center gap-2">
-                              <Progress value={stock.valueScore} className="h-2 flex-1" />
-                              <span className="text-xs font-mono w-8">{stock.valueScore}</span>
-                            </div>
+                            <span className="text-lg font-bold text-blue-600">{stock.valueScore}</span>
                           </div>
                           <div>
                             <div className="text-xs text-muted-foreground mb-1">Risk</div>
-                            <div className="flex items-center gap-2">
-                              <Progress value={stock.riskScore} className="h-2 flex-1" />
-                              <span className="text-xs font-mono w-8">{stock.riskScore}</span>
-                            </div>
+                            <span className="text-lg font-bold text-red-600">{stock.riskScore}</span>
                           </div>
                         </div>
                       </div>
                     </div>
                     
                     <div className="text-right">
-                      <div className="text-3xl font-bold mb-2">
+                      <div className="text-3xl font-bold mb-1">
                         {stock.totalScore.toFixed(1)}
                       </div>
-                      <div className={`flex items-center gap-1 justify-end ${getChangeColor(stock.change)} mb-4`}>
-                        {getChangeIcon(stock.change)}
-                        <span className="font-mono text-sm">
-                          {stock.change > 0 ? '+' : ''}{stock.change.toFixed(1)} 
-                          ({stock.changePercent > 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%)
-                        </span>
-                      </div>
+                      <div className="text-xs text-muted-foreground mb-4">Preference-Based Average</div>
                       <Button 
                         onClick={() => handleAddToRoster(stock)}
                         className="w-full"
