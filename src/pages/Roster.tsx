@@ -195,13 +195,13 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                   <DialogTrigger asChild>
                     <Button variant="outline" className="gap-2">
                       <BarChart className="h-4 w-4" />
-                      Visualize Portfoli
+                      Visualize Portfolio
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-bold">
-                        Portfoli Analytics Dashboard
+                        Portfolio Analytics Dashboard
                       </DialogTitle>
                       <DialogDescription className="text-lg">
                         Comprehensive analysis of your {roster.length} stock portfolio
@@ -209,7 +209,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                     </DialogHeader>
                     
                     <div className="space-y-8">
-                      {/* Portfoli Overview Cards */}
+                      {/* Portfolio Overview Cards */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <Card className="bg-gradient-card border-border/50">
                           <CardContent className="p-4 text-center">
@@ -326,11 +326,11 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                         </CardContent>
                       </Card>
 
-                      {/* Portfoli Composition */}
+                      {/* Portfolio Composition */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <Card className="bg-gradient-card border-border/50">
                           <CardHeader>
-                            <CardTitle className="text-xl">Portfoli Composition</CardTitle>
+                            <CardTitle className="text-xl">Portfolio Composition</CardTitle>
                             <CardDescription>Distribution of scores across your portfolio</CardDescription>
                           </CardHeader>
                           <CardContent>
@@ -365,7 +365,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                           </CardContent>
                         </Card>
 
-                        {/* Portfoli Balance Radar */}
+                        {/* Portfolio Balance Radar */}
                         <Card className="bg-gradient-card border-border/50">
                           <CardHeader>
                             <CardTitle className="text-xl">Portfolio Balance</CardTitle>
