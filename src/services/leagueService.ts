@@ -185,8 +185,19 @@ export class LeagueService {
         throw settingsError;
       }
 
-      // The database trigger will automatically add the creator as an admin member
-      // No need to manually insert here to avoid duplicates
+      // Add creator as admin member
+      const { error: memberError } = await supabase
+        .from('league_members')
+        .insert({
+          league_id: (league as any).id,
+          user_id: user.id,
+          team_name: 'My Team',
+          is_commissioner: true
+        } as any);
+
+      if (memberError) {
+        console.error('Error adding creator as admin:', memberError);
+      }
 
       // Get the complete league data
       const completeLeague = await this.getLeagueByCode((league as any).code);
