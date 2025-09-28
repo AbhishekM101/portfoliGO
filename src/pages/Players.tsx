@@ -100,7 +100,12 @@ const Players = () => {
     const matchesSearch = stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          stock.company.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSector = selectedSector === "All" || stock.sector === selectedSector;
-    return matchesSearch && matchesSector;
+    
+    // Check if stock is currently in the user's roster
+    // (Other teams' rosters are managed separately and don't affect availability)
+    const isInUserRoster = roster.some(rosteredStock => rosteredStock.id === stock.id);
+    
+    return matchesSearch && matchesSector && !isInUserRoster;
   });
 
   const handleAddToRoster = async (stock: Stock) => {
@@ -226,15 +231,16 @@ const Players = () => {
             </div>
             <CardDescription>
               {filteredStocks.length} stocks available to add to your roster
+              {filteredStocks.length === 0 && " (All stocks have been drafted)"}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {filteredStocks.length === 0 ? (
               <div className="text-center py-12">
                 <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No stocks found</h3>
+                <h3 className="text-lg font-semibold mb-2">No stocks available</h3>
                 <p className="text-muted-foreground">
-                  Try adjusting your search or filter criteria.
+                  All stocks have been drafted by teams in the league.
                 </p>
               </div>
             ) : (
