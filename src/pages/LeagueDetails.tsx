@@ -1,13 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Trophy, Target, Users, BarChart3 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, Trophy, Target, Users, BarChart3, Settings, AlertCircle, Save } from "lucide-react";
 import { useLeague } from "@/contexts/LeagueContext";
 import { useRoster } from "@/contexts/RosterContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { LeagueService } from "@/services/leagueService";
+import { useToast } from "@/hooks/use-toast";
 import Roster from "./Roster";
 import Matchup from "./Matchup";
 import Players from "./Players";
@@ -15,13 +22,87 @@ import Players from "./Players";
 const LeagueDetails = () => {
   const { leagueId } = useParams();
   const navigate = useNavigate();
-  const { userLeagues } = useLeague();
+  const { userLeagues, refreshLeagues } = useLeague();
   const { team } = useRoster();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("roster");
+  const [settingsData, setSettingsData] = useState({
+    name: '',
+    description: '',
+    is_public: false,
+    max_players: 10,
+    roster_size: 8,
+    risk_weight: 30,
+    growth_weight: 40,
+    value_weight: 30
+  });
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Find the current league
   const currentLeague = userLeagues.find(league => league.id === leagueId);
+  
+  // Check if current user is admin/commissioner
+  const isAdmin = currentLeague?.members?.find(member => member.user_id === user?.id)?.is_commissioner;
+  
+  // Initialize settings data when league changes
+  useEffect(() => {
+    if (currentLeague) {
+      // Get the actual saved weights from the database
+      const savedRiskWeight = currentLeague.settings?.risk_weight || 0.3;
+      const savedGrowthWeight = currentLeague.settings?.growth_weight || 0.4;
+      const savedValueWeight = currentLeague.settings?.value_weight || 0.3;
+      
+      setSettingsData({
+        name: currentLeague.name,
+        description: currentLeague.description || '',
+        is_public: currentLeague.is_public,
+        max_players: currentLeague.max_players,
+        roster_size: currentLeague.roster_size,
+        risk_weight: Math.round(savedRiskWeight * 100),
+        growth_weight: Math.round(savedGrowthWeight * 100),
+        value_weight: Math.round(savedValueWeight * 100)
+      });
+    }
+  }, [currentLeague]);
+  
+  const handleSaveSettings = async () => {
+    if (!currentLeague) return;
+    
+    setIsSaving(true);
+    setSettingsError(null);
+    
+    try {
+      // Convert percentage weights back to decimal for database
+      const settingsToSave = {
+        ...settingsData,
+        risk_weight: settingsData.risk_weight / 100,
+        growth_weight: settingsData.growth_weight / 100,
+        value_weight: settingsData.value_weight / 100
+      };
+      
+      await LeagueService.updateLeagueSettings(currentLeague.id, settingsToSave);
+      
+      // Refresh league data to show updated settings
+      await refreshLeagues();
+      
+      toast({
+        title: "Settings Saved",
+        description: "League settings have been updated successfully.",
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save settings';
+      setSettingsError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
   
   
   if (!currentLeague) {
@@ -83,7 +164,7 @@ const LeagueDetails = () => {
       <div className="bg-card border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-2">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
               <TabsTrigger value="roster" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Roster
@@ -100,6 +181,12 @@ const LeagueDetails = () => {
                 <Trophy className="h-4 w-4" />
                 Standings
               </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger value="settings" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <div className="max-w-6xl mx-auto p-6">
@@ -189,6 +276,188 @@ const LeagueDetails = () => {
                   </Card>
                 </div>
               </TabsContent>
+              
+              {isAdmin && (
+                <TabsContent value="settings" className="mt-0">
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>League Settings</CardTitle>
+                        <CardDescription>
+                          Configure your league settings and scoring rules
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {settingsError && (
+                          <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{settingsError}</AlertDescription>
+                          </Alert>
+                        )}
+                        
+                        <div>
+                          <Label htmlFor="league-name">League Name</Label>
+                          <Input 
+                            id="league-name" 
+                            value={settingsData.name}
+                            onChange={(e) => setSettingsData({ ...settingsData, name: e.target.value })}
+                            placeholder="Enter league name" 
+                            className="mt-2" 
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="league-description">Description (Optional)</Label>
+                          <Input 
+                            id="league-description" 
+                            value={settingsData.description}
+                            onChange={(e) => setSettingsData({ ...settingsData, description: e.target.value })}
+                            placeholder="Enter league description" 
+                            className="mt-2" 
+                          />
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="public-league"
+                            checked={settingsData.is_public}
+                            onCheckedChange={(checked) => setSettingsData({ ...settingsData, is_public: checked })}
+                          />
+                          <Label htmlFor="public-league">Make this league public</Label>
+                        </div>
+
+                        <div>
+                          <Label>Max Players</Label>
+                          <div className="mt-2">
+                            <Slider
+                              value={[settingsData.max_players]}
+                              onValueChange={(value) => setSettingsData({ ...settingsData, max_players: value[0] })}
+                              max={16}
+                              min={4}
+                              step={2}
+                            />
+                            <div className="text-center mt-2 text-sm text-muted-foreground">
+                              {settingsData.max_players} players
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label>Roster Size</Label>
+                          <div className="mt-2">
+                            <Slider
+                              value={[settingsData.roster_size]}
+                              onValueChange={(value) => setSettingsData({ ...settingsData, roster_size: value[0] })}
+                              max={12}
+                              min={5}
+                              step={1}
+                            />
+                            <div className="text-center mt-2 text-sm text-muted-foreground">
+                              {settingsData.roster_size} stocks per team
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-base font-semibold">Scoring Weights</Label>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Adjust how much each factor contributes to stock scores (must total 100%)
+                          </p>
+                          
+                          <div className="space-y-4">
+                            <div>
+                              <div className="flex justify-between items-center mb-2">
+                                <Label>Risk Score</Label>
+                                <Badge variant="outline">{settingsData.risk_weight}%</Badge>
+                              </div>
+                              <Slider
+                                value={[settingsData.risk_weight]}
+                                onValueChange={(value) => {
+                                  const newRisk = value[0];
+                                  const remaining = 100 - newRisk;
+                                  const growthRatio = settingsData.growth_weight / (settingsData.growth_weight + settingsData.value_weight);
+                                  setSettingsData({
+                                    ...settingsData,
+                                    risk_weight: newRisk,
+                                    growth_weight: Math.round(remaining * growthRatio),
+                                    value_weight: remaining - Math.round(remaining * growthRatio)
+                                  });
+                                }}
+                                max={80}
+                                min={10}
+                                step={5}
+                              />
+                            </div>
+                            
+                            <div>
+                              <div className="flex justify-between items-center mb-2">
+                                <Label>Growth Score</Label>
+                                <Badge variant="outline">{settingsData.growth_weight}%</Badge>
+                              </div>
+                              <Slider
+                                value={[settingsData.growth_weight]}
+                                onValueChange={(value) => {
+                                  const newGrowth = value[0];
+                                  const remaining = 100 - newGrowth;
+                                  const riskRatio = settingsData.risk_weight / (settingsData.risk_weight + settingsData.value_weight);
+                                  setSettingsData({
+                                    ...settingsData,
+                                    growth_weight: newGrowth,
+                                    risk_weight: Math.round(remaining * riskRatio),
+                                    value_weight: remaining - Math.round(remaining * riskRatio)
+                                  });
+                                }}
+                                max={80}
+                                min={10}
+                                step={5}
+                              />
+                            </div>
+                            
+                            <div>
+                              <div className="flex justify-between items-center mb-2">
+                                <Label>Value Score</Label>
+                                <Badge variant="outline">{settingsData.value_weight}%</Badge>
+                              </div>
+                              <Slider
+                                value={[settingsData.value_weight]}
+                                onValueChange={(value) => {
+                                  const newValue = value[0];
+                                  const remaining = 100 - newValue;
+                                  const riskRatio = settingsData.risk_weight / (settingsData.risk_weight + settingsData.growth_weight);
+                                  setSettingsData({
+                                    ...settingsData,
+                                    value_weight: newValue,
+                                    risk_weight: Math.round(remaining * riskRatio),
+                                    growth_weight: remaining - Math.round(remaining * riskRatio)
+                                  });
+                                }}
+                                max={80}
+                                min={10}
+                                step={5}
+                              />
+                            </div>
+                            
+                            <div className="text-center p-3 bg-muted rounded-lg">
+                              <span className="text-sm font-medium">
+                                Total: {settingsData.risk_weight + settingsData.growth_weight + settingsData.value_weight}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button 
+                          onClick={handleSaveSettings}
+                          disabled={isSaving}
+                          className="w-full"
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          {isSaving ? 'Saving...' : 'Save Settings'}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              )}
             </div>
           </Tabs>
         </div>
