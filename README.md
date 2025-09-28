@@ -1,4 +1,5 @@
 # PortfoliGO - Fantasy Stock Trading Platform
+By: Abhishek Mynam, Tanush Chintala, Rohan Singhal
 
 PortfoliGO is a comprehensive fantasy stock trading platform that combines machine learning-powered stock analysis with competitive league-based gameplay. Users can draft stocks, compete with friends, and dominate the markets in the ultimate fantasy trading experience.
 
@@ -138,10 +139,6 @@ python value_model_math.py
 
 ## 🚀 Deployment
 
-### Lovable Platform
-- Open [Lovable Project](https://lovable.dev/projects/b305e727-b0c6-42f8-9c26-a8ab786a3478)
-- Click Share -> Publish for instant deployment
-
 ### Custom Domain
 - Navigate to Project > Settings > Domains
 - Connect your custom domain for professional branding
@@ -157,13 +154,6 @@ python value_model_math.py
 ## 📝 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Built with [Lovable](https://lovable.dev) - AI-powered development platform
-- UI components from [Shadcn/ui](https://ui.shadcn.com/)
-- Charts powered by [Recharts](https://recharts.org/)
-- Backend services by [Supabase](https://supabase.com/)
 
 ---
 
