@@ -167,14 +167,6 @@ const Players = () => {
                         </div>
                       </div>
                       
-                      {/* Price Change */}
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Price: ${stock.price}</span>
-                        <div className={`flex items-center gap-1 ${getChangeColor(stock.changePercent)}`}>
-                          {getChangeIcon(stock.changePercent)}
-                          <span className="font-mono">{stock.changePercent > 0 ? '+' : ''}{stock.changePercent.toFixed(1)}%</span>
-                        </div>
-                      </div>
                     </div>
                     
                     <div className="text-center">

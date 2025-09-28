@@ -175,7 +175,7 @@ const LeagueDetails = () => {
               </TabsTrigger>
               <TabsTrigger value="players" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Players
+                Stocks
               </TabsTrigger>
               <TabsTrigger value="standings" className="flex items-center gap-2">
                 <Trophy className="h-4 w-4" />
