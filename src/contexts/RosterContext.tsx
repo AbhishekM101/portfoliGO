@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Stock, Team, RosterStats } from '@/types/roster';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLeague } from '@/contexts/LeagueContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RosterContextType {
   team: Team | null;
@@ -13,6 +14,7 @@ interface RosterContextType {
   addStockToRoster: (stock: Stock) => Promise<void>;
   removeStockFromRoster: (stockId: string) => Promise<void>;
   refetch: () => Promise<void>;
+  refreshAvailableStocks: () => Promise<void>;
 }
 
 const RosterContext = createContext<RosterContextType | undefined>(undefined);
@@ -195,14 +197,41 @@ export const RosterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsLoading(true);
       setError(null);
       
-      // TODO: Replace with actual API calls
-      // const teamData = await api.getTeam();
-      // const rosterData = await api.getRoster();
-      // const statsData = await api.getRosterStats();
+      // Fetch available stocks from Supabase
+      const { data: stocksData, error: stocksError } = await supabase
+        .from('stocks')
+        .select('*')
+        .order('total_score', { ascending: false });
       
-      // For now, use mock data
+      if (stocksError) {
+        throw new Error(`Failed to fetch stocks: ${stocksError.message}`);
+      }
+      
+      // Convert Supabase data to Stock format
+      const stocks: Stock[] = (stocksData || []).map(stock => ({
+        id: stock.id,
+        symbol: stock.symbol,
+        company: stock.company,
+        sector: stock.sector,
+        totalScore: stock.total_score,
+        growthScore: stock.growth_score,
+        valueScore: stock.value_score,
+        riskScore: stock.risk_score,
+        change: stock.change,
+        changePercent: stock.change_percent,
+        draftPosition: stock.draft_position,
+        price: stock.price,
+        marketCap: stock.market_cap,
+        volume: stock.volume,
+        lastUpdated: stock.last_updated
+      }));
+      
+      // Filter out stocks that are already in roster
+      const rosterSymbols = roster.map(stock => stock.symbol);
+      const availableStocksFiltered = stocks.filter(stock => !rosterSymbols.includes(stock.symbol));
+      
+      setAvailableStocks(availableStocksFiltered);
       setTeam(mockTeam);
-      setRoster(roster); // Keep current roster state
       
       // Calculate stats based on current roster
       if (roster.length > 0) {
@@ -223,7 +252,11 @@ export const RosterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       
     } catch (err) {
+      console.error('Error fetching roster data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch roster data');
+      // Fallback to mock data if Supabase fails
+      setAvailableStocks(mockAvailableStocks);
+      setTeam(mockTeam);
     } finally {
       setIsLoading(false);
     }
@@ -340,6 +373,47 @@ export const RosterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     await fetchRoster();
   };
 
+  const refreshAvailableStocks = async () => {
+    try {
+      // Fetch latest stocks from Supabase
+      const { data: stocksData, error: stocksError } = await supabase
+        .from('stocks')
+        .select('*')
+        .order('total_score', { ascending: false });
+      
+      if (stocksError) {
+        throw new Error(`Failed to fetch stocks: ${stocksError.message}`);
+      }
+      
+      // Convert Supabase data to Stock format
+      const stocks: Stock[] = (stocksData || []).map(stock => ({
+        id: stock.id,
+        symbol: stock.symbol,
+        company: stock.company,
+        sector: stock.sector,
+        totalScore: stock.total_score,
+        growthScore: stock.growth_score,
+        valueScore: stock.value_score,
+        riskScore: stock.risk_score,
+        change: stock.change,
+        changePercent: stock.change_percent,
+        draftPosition: stock.draft_position,
+        price: stock.price,
+        marketCap: stock.market_cap,
+        volume: stock.volume,
+        lastUpdated: stock.last_updated
+      }));
+      
+      // Filter out stocks that are already in roster
+      const rosterSymbols = roster.map(stock => stock.symbol);
+      const availableStocksFiltered = stocks.filter(stock => !rosterSymbols.includes(stock.symbol));
+      
+      setAvailableStocks(availableStocksFiltered);
+    } catch (err) {
+      console.error('Error refreshing available stocks:', err);
+    }
+  };
+
   useEffect(() => {
     fetchRoster();
   }, [user, currentLeague]);
@@ -354,6 +428,7 @@ export const RosterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addStockToRoster,
     removeStockFromRoster,
     refetch,
+    refreshAvailableStocks,
   };
 
   return <RosterContext.Provider value={value}>{children}</RosterContext.Provider>;

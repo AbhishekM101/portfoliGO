@@ -5,6 +5,7 @@ import time
 import warnings
 import sys
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 warnings.filterwarnings('ignore')
 
 # Import your API key
@@ -556,6 +557,7 @@ def main():
 # ====================================================
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 @app.route('/api/value/<symbol>')
 def get_value_score(symbol):

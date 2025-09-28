@@ -8,6 +8,7 @@ import os
 import sys
 from pathlib import Path
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 warnings.filterwarnings('ignore')
 
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
@@ -238,7 +239,6 @@ class risk_model_gen:
             features.update(self._get_market_metrics(symbol))
             
             # Rate limiting
-            time.sleep(0.1)
             
         except Exception as e:
             print(f"Error collecting data for {symbol}: {e}")
@@ -547,6 +547,7 @@ def train_new_model(symbols=None, model_dir="../model_data", force_refresh=False
 # ====================================================
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 @app.route('/api/risk/<symbol>')
 def get_risk_score(symbol):

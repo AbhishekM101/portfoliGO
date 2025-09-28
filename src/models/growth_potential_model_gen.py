@@ -5,6 +5,7 @@ import requests
 import joblib
 import sys
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from sklearn.preprocessing import MinMaxScaler
 from API_KEY import API_KEY
 
@@ -193,7 +194,6 @@ def run_scoring_for_tickers(ticker_list):
             features = get_all_growth_features(ticker)
             features["Symbol"] = ticker
             collected_data.append(features)
-            time.sleep(5)  # Delay to help avoid API rate limits
         except Exception as e:
             print(f"Error collecting data for {ticker}: {e}")
             continue
@@ -246,6 +246,7 @@ def run_scoring_for_tickers(ticker_list):
 # ====================================================
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 @app.route('/api/growth/<symbol>')
 def get_growth_score(symbol):
@@ -296,6 +297,40 @@ def get_bulk_growth_scores():
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'service': 'growth_model'})
+
+@app.route('/api/fmp/profile/<symbol>')
+def proxy_fmp_profile(symbol):
+    """Proxy FMP profile API to avoid CORS issues"""
+    try:
+        import requests
+        from API_KEY import API_KEY
+        
+        url = f"https://financialmodelingprep.com/api/v3/profile/{symbol}?apikey={API_KEY}"
+        response = requests.get(url)
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({'error': f'FMP API returned {response.status_code}'}), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/fmp/quote/<symbol>')
+def proxy_fmp_quote(symbol):
+    """Proxy FMP quote API to avoid CORS issues"""
+    try:
+        import requests
+        from API_KEY import API_KEY
+        
+        url = f"https://financialmodelingprep.com/api/v3/quote/{symbol}?apikey={API_KEY}"
+        response = requests.get(url)
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({'error': f'FMP API returned {response.status_code}'}), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # ====================================================
 # Main Execution Block
