@@ -190,13 +190,13 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                 <h1 className="text-3xl font-bold mb-2">
                   {team?.name || "Your Team"}
                 </h1>
-                <p className="text-muted-foreground">Your fantasy stock portfolio</p>
+                <p className="text-muted-foreground">Your PortfolioGO stock portfolio</p>
               </div>
               {roster.length > 0 && (
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0">
-                      <BarChart className="h-4 w-4" />
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      <BarChart className="h-4 w-4 mr-2" />
                       Visualize Portfolio
                     </Button>
                   </DialogTrigger>

@@ -108,11 +108,16 @@ const Welcome = () => {
         
         <div className="relative z-10 text-center max-w-4xl mx-auto px-6 py-20 pb-32">
           <div className="mb-8">
+            <div className="flex justify-center mb-6">
+              <img 
+                src="/logo.png" 
+                alt="PortfolioGO Logo" 
+                className="h-48 w-48 md:h-56 md:w-56 object-contain"
+                style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}
+              />
+            </div>
             <h1 className="text-6xl md:text-8xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Fantasy
-              </span>{" "}
-              <span className="text-foreground">Stocks</span>
+              <span className="text-white">Portfolio</span><span className="text-green-500">GO</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
               Draft your stock portfolio, compete with friends, and dominate the markets in the ultimate fantasy trading experience.

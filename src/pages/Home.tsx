@@ -252,9 +252,17 @@ const Home = () => {
       <div className="max-w-6xl mx-auto p-6">
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">PortfoliGO</h1>
-              <p className="text-muted-foreground">Manage your leagues and compete with friends</p>
+            <div className="flex items-center gap-4">
+              <img 
+                src="/logo.png" 
+                alt="PortfolioGO Logo" 
+                className="h-16 w-16 object-contain"
+                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
+              />
+              <div>
+                <h1 className="text-3xl font-bold mb-2"><span className="text-white">Portfolio</span><span className="text-green-500">GO</span></h1>
+                <p className="text-muted-foreground">Manage your leagues and compete with friends</p>
+              </div>
             </div>
             
             {/* User Menu */}
