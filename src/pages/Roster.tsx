@@ -16,11 +16,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { TrendingUp, TrendingDown, Minus, BarChart3, Calendar, AlertCircle, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { TrendingUp, TrendingDown, Minus, BarChart3, Calendar, AlertCircle, RefreshCw, Trash2, BarChart, Filter } from "lucide-react";
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { useRoster } from "@/contexts/RosterContext";
 import { Stock } from "@/types/roster";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface RosterProps {
   onNavigateToPlayers?: () => void;
@@ -30,6 +40,51 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
   const { team, roster, stats, isLoading, error, refetch, removeStockFromRoster } = useRoster();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [selectedMetric, setSelectedMetric] = useState<'all' | 'growth' | 'value' | 'risk' | 'overall'>('all');
+
+  // Prepare data for visualization
+  const getVisualizationData = () => {
+    if (!roster.length) return { barData: [], pieData: [], radarData: [] };
+
+    // Bar chart data for individual stocks
+    const barData = roster.map(stock => ({
+      symbol: stock.symbol,
+      growth: stock.growthScore,
+      value: stock.valueScore,
+      risk: stock.riskScore,
+      total: stock.totalScore
+    }));
+
+    // Pie chart data for overall portfolio composition
+    const totalGrowth = roster.reduce((sum, stock) => sum + stock.growthScore, 0);
+    const totalValue = roster.reduce((sum, stock) => sum + stock.valueScore, 0);
+    const totalRisk = roster.reduce((sum, stock) => sum + stock.riskScore, 0);
+    const totalOverall = roster.reduce((sum, stock) => sum + stock.totalScore, 0);
+
+    const pieData = [
+      { name: 'Growth', value: totalGrowth, color: '#10b981' },
+      { name: 'Value', value: totalValue, color: '#3b82f6' },
+      { name: 'Risk', value: totalRisk, color: '#ef4444' },
+      { name: 'Overall', value: totalOverall, color: '#8b5cf6' }
+    ];
+
+    // Radar chart data for portfolio balance
+    const avgGrowth = totalGrowth / roster.length;
+    const avgValue = totalValue / roster.length;
+    const avgRisk = totalRisk / roster.length;
+    const avgOverall = totalOverall / roster.length;
+
+    const radarData = [
+      { metric: 'Growth', value: avgGrowth, fullMark: 100 },
+      { metric: 'Value', value: avgValue, fullMark: 100 },
+      { metric: 'Risk', value: avgRisk, fullMark: 100 },
+      { metric: 'Overall', value: avgOverall, fullMark: 100 }
+    ];
+
+    return { barData, pieData, radarData };
+  };
+
+  const { barData, pieData, radarData } = getVisualizationData();
 
   const getChangeIcon = (change: number) => {
     if (change > 0) return <TrendingUp className="h-4 w-4 text-bull" />;
@@ -130,11 +185,280 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
         {/* Team Overview */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">
-                {team?.name || "Your Team"}
-              </h1>
-              <p className="text-muted-foreground">Your fantasy stock portfolio</p>
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">
+                  {team?.name || "Your Team"}
+                </h1>
+                <p className="text-muted-foreground">Your fantasy stock portfolio</p>
+              </div>
+              {roster.length > 0 && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0">
+                      <BarChart className="h-4 w-4" />
+                      Visualize Portfolio
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                        Portfolio Analytics Dashboard
+                      </DialogTitle>
+                      <DialogDescription className="text-lg">
+                        Comprehensive analysis of your {roster.length} stock portfolio
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-8">
+                      {/* Portfolio Overview Cards */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                          <CardContent className="p-4 text-center">
+                            <div className="text-3xl font-bold text-green-600">
+                              {pieData[0]?.value.toFixed(1) || '0.0'}
+                            </div>
+                            <div className="text-sm text-green-700 font-medium">Total Growth</div>
+                            <div className="text-xs text-green-600">
+                              Avg: {(pieData[0]?.value / roster.length || 0).toFixed(1)}
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                          <CardContent className="p-4 text-center">
+                            <div className="text-3xl font-bold text-blue-600">
+                              {pieData[1]?.value.toFixed(1) || '0.0'}
+                            </div>
+                            <div className="text-sm text-blue-700 font-medium">Total Value</div>
+                            <div className="text-xs text-blue-600">
+                              Avg: {(pieData[1]?.value / roster.length || 0).toFixed(1)}
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+                          <CardContent className="p-4 text-center">
+                            <div className="text-3xl font-bold text-red-600">
+                              {pieData[2]?.value.toFixed(1) || '0.0'}
+                            </div>
+                            <div className="text-sm text-red-700 font-medium">Total Risk</div>
+                            <div className="text-xs text-red-600">
+                              Avg: {(pieData[2]?.value / roster.length || 0).toFixed(1)}
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                          <CardContent className="p-4 text-center">
+                            <div className="text-3xl font-bold text-purple-600">
+                              {pieData[3]?.value.toFixed(1) || '0.0'}
+                            </div>
+                            <div className="text-sm text-purple-700 font-medium">Total Overall</div>
+                            <div className="text-xs text-purple-600">
+                              Avg: {(pieData[3]?.value / roster.length || 0).toFixed(1)}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Individual Stock Performance */}
+                      <Card className="bg-gradient-to-r from-slate-50 to-gray-50">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-xl">Individual Stock Performance</CardTitle>
+                              <CardDescription>Detailed breakdown of each stock's scores</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Filter className="h-4 w-4 text-muted-foreground" />
+                              <div className="flex gap-1">
+                                {[
+                                  { key: 'all', label: 'All', color: 'bg-gray-500' },
+                                  { key: 'growth', label: 'Growth', color: 'bg-green-500' },
+                                  { key: 'value', label: 'Value', color: 'bg-blue-500' },
+                                  { key: 'risk', label: 'Risk', color: 'bg-red-500' },
+                                  { key: 'overall', label: 'Overall', color: 'bg-purple-500' }
+                                ].map((metric) => (
+                                  <Button
+                                    key={metric.key}
+                                    variant={selectedMetric === metric.key ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setSelectedMetric(metric.key as any)}
+                                    className={`text-xs ${
+                                      selectedMetric === metric.key 
+                                        ? `${metric.color} text-white` 
+                                        : 'text-muted-foreground'
+                                    }`}
+                                  >
+                                    {metric.label}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="h-96">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <RechartsBarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                <XAxis 
+                                  dataKey="symbol" 
+                                  angle={-45}
+                                  textAnchor="end"
+                                  height={80}
+                                  fontSize={12}
+                                  stroke="#64748b"
+                                />
+                                <YAxis 
+                                  domain={[0, 100]}
+                                  fontSize={12}
+                                  stroke="#64748b"
+                                />
+                                <Tooltip 
+                                  contentStyle={{
+                                    backgroundColor: 'white',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                  }}
+                                />
+                                {selectedMetric === 'all' && (
+                                  <>
+                                    <Bar dataKey="growth" fill="#10b981" name="Growth" radius={[2, 2, 0, 0]} />
+                                    <Bar dataKey="value" fill="#3b82f6" name="Value" radius={[2, 2, 0, 0]} />
+                                    <Bar dataKey="risk" fill="#ef4444" name="Risk" radius={[2, 2, 0, 0]} />
+                                    <Bar dataKey="total" fill="#8b5cf6" name="Total" radius={[2, 2, 0, 0]} />
+                                  </>
+                                )}
+                                {selectedMetric === 'growth' && (
+                                  <Bar dataKey="growth" fill="#10b981" name="Growth" radius={[2, 2, 0, 0]} />
+                                )}
+                                {selectedMetric === 'value' && (
+                                  <Bar dataKey="value" fill="#3b82f6" name="Value" radius={[2, 2, 0, 0]} />
+                                )}
+                                {selectedMetric === 'risk' && (
+                                  <Bar dataKey="risk" fill="#ef4444" name="Risk" radius={[2, 2, 0, 0]} />
+                                )}
+                                {selectedMetric === 'overall' && (
+                                  <Bar dataKey="total" fill="#8b5cf6" name="Total" radius={[2, 2, 0, 0]} />
+                                )}
+                              </RechartsBarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Portfolio Composition */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card className="bg-gradient-to-br from-indigo-50 to-purple-50">
+                          <CardHeader>
+                            <CardTitle className="text-xl">Portfolio Composition</CardTitle>
+                            <CardDescription>Distribution of scores across your portfolio</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="h-80">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <Pie
+                                    data={pieData}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                    outerRadius={100}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                  >
+                                    {pieData.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                  </Pie>
+                                  <Tooltip 
+                                    contentStyle={{
+                                      backgroundColor: 'white',
+                                      border: '1px solid #e2e8f0',
+                                      borderRadius: '8px',
+                                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                  />
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Portfolio Balance Radar */}
+                        <Card className="bg-gradient-to-br from-cyan-50 to-blue-50">
+                          <CardHeader>
+                            <CardTitle className="text-xl">Portfolio Balance</CardTitle>
+                            <CardDescription>Overall balance across all metrics</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="h-80">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart data={radarData}>
+                                  <PolarGrid stroke="#e2e8f0" />
+                                  <PolarAngleAxis dataKey="metric" fontSize={12} stroke="#64748b" />
+                                  <PolarRadiusAxis angle={90} domain={[0, 100]} fontSize={10} stroke="#64748b" />
+                                  <Radar
+                                    name="Portfolio"
+                                    dataKey="value"
+                                    stroke="#8b5cf6"
+                                    fill="#8b5cf6"
+                                    fillOpacity={0.3}
+                                    strokeWidth={2}
+                                  />
+                                  <Tooltip 
+                                    contentStyle={{
+                                      backgroundColor: 'white',
+                                      border: '1px solid #e2e8f0',
+                                      borderRadius: '8px',
+                                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                  />
+                                </RadarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Top Performers */}
+                      <Card className="bg-gradient-to-r from-yellow-50 to-orange-50">
+                        <CardHeader>
+                          <CardTitle className="text-xl">Top Performers</CardTitle>
+                          <CardDescription>Your best performing stocks</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {roster
+                              .sort((a, b) => b.totalScore - a.totalScore)
+                              .slice(0, 3)
+                              .map((stock, index) => (
+                                <div key={stock.symbol} className="p-4 bg-white rounded-lg border border-orange-200">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h4 className="font-bold text-lg">{stock.symbol}</h4>
+                                    <Badge variant="outline" className="bg-orange-100 text-orange-800">
+                                      #{index + 1}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-2xl font-bold text-orange-600 mb-1">
+                                    {stock.totalScore.toFixed(1)}
+                                  </div>
+                                  <div className="text-sm text-gray-600">{stock.company}</div>
+                                  <div className="flex justify-between text-xs mt-2">
+                                    <span className="text-green-600">G: {stock.growthScore}</span>
+                                    <span className="text-blue-600">V: {stock.valueScore}</span>
+                                    <span className="text-red-600">R: {stock.riskScore}</span>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-success">
