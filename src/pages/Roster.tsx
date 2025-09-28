@@ -40,7 +40,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
   const { team, roster, stats, isLoading, error, refetch, removeStockFromRoster } = useRoster();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedMetric, setSelectedMetric] = useState<'all' | 'growth' | 'value' | 'risk' | 'overall'>('all');
+  const [selectedMetric, setSelectedMetric] = useState<'all' | 'growth' | 'value' | 'risk'>('all');
 
   // Prepare data for visualization
   const getVisualizationData = () => {
@@ -55,7 +55,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
       total: stock.totalScore
     }));
 
-    // Pie chart data for overall portfolio composition
+    // Pie chart data for portfolio composition
     const totalGrowth = roster.reduce((sum, stock) => sum + stock.growthScore, 0);
     const totalValue = roster.reduce((sum, stock) => sum + stock.valueScore, 0);
     const totalRisk = roster.reduce((sum, stock) => sum + stock.riskScore, 0);
@@ -64,8 +64,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
     const pieData = [
       { name: 'Growth', value: totalGrowth, color: '#10b981' },
       { name: 'Value', value: totalValue, color: '#3b82f6' },
-      { name: 'Risk', value: totalRisk, color: '#ef4444' },
-      { name: 'Overall', value: totalOverall, color: '#8b5cf6' }
+      { name: 'Risk', value: totalRisk, color: '#ef4444' }
     ];
 
     // Radar chart data for portfolio balance
@@ -77,8 +76,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
     const radarData = [
       { metric: 'Growth', value: avgGrowth, fullMark: 100 },
       { metric: 'Value', value: avgValue, fullMark: 100 },
-      { metric: 'Risk', value: avgRisk, fullMark: 100 },
-      { metric: 'Overall', value: avgOverall, fullMark: 100 }
+      { metric: 'Risk', value: avgRisk, fullMark: 100 }
     ];
 
     return { barData, pieData, radarData };
@@ -246,17 +244,6 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                             </div>
                           </CardContent>
                         </Card>
-                        <Card className="bg-gradient-card border-border/50">
-                          <CardContent className="p-4 text-center">
-                            <div className="text-3xl font-bold text-primary">
-                              {pieData[3]?.value.toFixed(1) || '0.0'}
-                            </div>
-                            <div className="text-sm text-muted-foreground font-medium">Total Overall</div>
-                            <div className="text-xs text-muted-foreground">
-                              Avg: {(pieData[3]?.value / roster.length || 0).toFixed(1)}
-                            </div>
-                          </CardContent>
-                        </Card>
                       </div>
 
                       {/* Individual Stock Performance */}
@@ -274,8 +261,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                                   { key: 'all', label: 'All', color: 'bg-muted' },
                                   { key: 'growth', label: 'Growth', color: 'bg-green-500' },
                                   { key: 'value', label: 'Value', color: 'bg-blue-500' },
-                                  { key: 'risk', label: 'Risk', color: 'bg-red-500' },
-                                  { key: 'overall', label: 'Overall', color: 'bg-primary' }
+                                  { key: 'risk', label: 'Risk', color: 'bg-red-500' }
                                 ].map((metric) => (
                                   <Button
                                     key={metric.key}
@@ -334,9 +320,6 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                                 {selectedMetric === 'risk' && (
                                   <Bar dataKey="risk" fill="#ef4444" name="Risk" radius={[2, 2, 0, 0]} />
                                 )}
-                                {selectedMetric === 'overall' && (
-                                  <Bar dataKey="total" fill="#8b5cf6" name="Total" radius={[2, 2, 0, 0]} />
-                                )}
                               </RechartsBarChart>
                             </ResponsiveContainer>
                           </div>
@@ -385,8 +368,8 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                         {/* Portfoli Balance Radar */}
                         <Card className="bg-gradient-card border-border/50">
                           <CardHeader>
-                            <CardTitle className="text-xl">Portfoli Balance</CardTitle>
-                            <CardDescription>Overall balance across all metrics</CardDescription>
+                            <CardTitle className="text-xl">Portfolio Balance</CardTitle>
+                            <CardDescription>Balance across all metrics</CardDescription>
                           </CardHeader>
                           <CardContent>
                             <div className="h-80">
@@ -396,7 +379,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                                   <PolarAngleAxis dataKey="metric" fontSize={12} stroke="#64748b" />
                                   <PolarRadiusAxis angle={90} domain={[0, 100]} fontSize={10} stroke="#64748b" />
                                   <Radar
-                                    name="Portfoli"
+                                    name="Portfolio"
                                     dataKey="value"
                                     stroke="#8b5cf6"
                                     fill="#8b5cf6"
