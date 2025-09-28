@@ -110,6 +110,68 @@ export type Database = {
           updated_at?: string
         }
       }
+      stocks: {
+        Row: {
+          id: string
+          symbol: string
+          company: string
+          sector: string
+          total_score: number
+          growth_score: number
+          value_score: number
+          risk_score: number
+          change: number
+          change_percent: number
+          draft_position: number
+          price: number
+          market_cap: number
+          volume: number
+          last_updated: string
+          risk_category: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          symbol: string
+          company: string
+          sector: string
+          total_score: number
+          growth_score: number
+          value_score: number
+          risk_score: number
+          change: number
+          change_percent: number
+          draft_position?: number
+          price: number
+          market_cap: number
+          volume: number
+          last_updated: string
+          risk_category: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          symbol?: string
+          company?: string
+          sector?: string
+          total_score?: number
+          growth_score?: number
+          value_score?: number
+          risk_score?: number
+          change?: number
+          change_percent?: number
+          draft_position?: number
+          price?: number
+          market_cap?: number
+          volume?: number
+          last_updated?: string
+          risk_category?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

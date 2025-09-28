@@ -74,6 +74,7 @@ const mockTrendingStocks = [
   }
 ];
 
+
 const Players = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSector, setSelectedSector] = useState("All");
@@ -122,6 +123,7 @@ const Players = () => {
     }
   };
 
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto p-6">
@@ -129,6 +131,7 @@ const Players = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Free Agents</h1>
           <p className="text-muted-foreground">Available stocks to add to your roster</p>
+          
         </div>
 
         {/* Search and Filters */}
