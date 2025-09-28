@@ -349,19 +349,35 @@ export class LeagueService {
       }
     }
 
-    // Update league settings
+    // Update league settings - create if doesn't exist
     const settingsUpdate: any = {};
     if (settings.risk_weight !== undefined) settingsUpdate.risk_weight = settings.risk_weight;
     if (settings.growth_weight !== undefined) settingsUpdate.growth_weight = settings.growth_weight;
     if (settings.value_weight !== undefined) settingsUpdate.value_weight = settings.value_weight;
 
     if (Object.keys(settingsUpdate).length > 0) {
+      // First try to update existing settings
       const { error: settingsError } = await (supabase as any)
         .from('league_settings')
         .update(settingsUpdate)
         .eq('league_id', leagueId);
 
-      if (settingsError) {
+      // If no settings exist, create them
+      if (settingsError && settingsError.code === 'PGRST116') {
+        const { error: insertError } = await (supabase as any)
+          .from('league_settings')
+          .insert({
+            league_id: leagueId,
+            risk_weight: settings.risk_weight || 0.3,
+            growth_weight: settings.growth_weight || 0.4,
+            value_weight: settings.value_weight || 0.3
+          });
+
+        if (insertError) {
+          console.error('Settings insert error:', insertError);
+          throw insertError;
+        }
+      } else if (settingsError) {
         console.error('Settings update error:', settingsError);
         throw settingsError;
       }
