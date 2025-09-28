@@ -255,7 +255,7 @@ const Home = () => {
             <div className="flex items-center gap-4">
               <img 
                 src="/logo.png" 
-                alt="PortfolioGO Logo" 
+                alt="PortfoliGO Logo" 
                 className="h-16 w-16 object-contain"
                 style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
               />

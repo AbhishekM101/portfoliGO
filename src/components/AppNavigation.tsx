@@ -76,7 +76,7 @@ export const AppNavigation = () => {
                   <BarChart3 className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="font-bold text-lg">PortfolioGO</h1>
+                  <h1 className="font-bold text-lg">PortfoliGO</h1>
                   <p className="text-xs text-muted-foreground">Join a league to get started</p>
                 </div>
               </>

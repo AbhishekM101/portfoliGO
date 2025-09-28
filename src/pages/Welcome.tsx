@@ -111,7 +111,7 @@ const Welcome = () => {
             <div className="flex justify-center mb-6">
               <img 
                 src="/logo.png" 
-                alt="PortfolioGO Logo" 
+                alt="PortfoliGO Logo" 
                 className="h-48 w-48 md:h-56 md:w-56 object-contain"
                 style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}
               />

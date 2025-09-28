@@ -186,11 +186,11 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">
-                  {team?.name || "Your Team"}
-                </h1>
-                <p className="text-muted-foreground">Your PortfolioGO stock portfolio</p>
+            <div>
+              <h1 className="text-3xl font-bold mb-2">
+                {team?.name || "Your Team"}
+              </h1>
+                <p className="text-muted-foreground">Your PortfoliGO stock portfolio</p>
               </div>
               {roster.length > 0 && (
                 <Dialog>
@@ -569,18 +569,18 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                           
                           {/* Score Breakdown */}
                           <div className="grid grid-cols-3 gap-4 mt-4">
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1">Growth</div>
+                            <div>
+                              <div className="text-xs text-muted-foreground mb-1">Growth</div>
                             <span className="text-lg font-bold text-green-600">{stock.growthScore}</span>
-                          </div>
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1">Value</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground mb-1">Value</div>
                             <span className="text-lg font-bold text-blue-600">{stock.valueScore}</span>
-                          </div>
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1">Risk</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground mb-1">Risk</div>
                             <span className="text-lg font-bold text-red-600">{stock.riskScore}</span>
-                          </div>
+                            </div>
                           </div>
                         </div>
                       </div>
