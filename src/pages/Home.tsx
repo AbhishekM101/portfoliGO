@@ -260,7 +260,7 @@ const Home = () => {
                 style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
               />
               <div>
-                <h1 className="text-3xl font-bold mb-2"><span className="text-white">Portfolio</span><span className="text-green-500">GO</span></h1>
+                <h1 className="text-3xl font-bold mb-2"><span className="text-white">Portfoli</span><span className="text-green-500">GO</span></h1>
                 <p className="text-muted-foreground">Manage your leagues and compete with friends</p>
               </div>
             </div>

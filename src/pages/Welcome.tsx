@@ -117,7 +117,7 @@ const Welcome = () => {
               />
             </div>
             <h1 className="text-6xl md:text-8xl font-bold mb-6">
-              <span className="text-white">Portfolio</span><span className="text-green-500">GO</span>
+              <span className="text-white">Portfoli</span><span className="text-green-500">GO</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
               Draft your stock portfolio, compete with friends, and dominate the markets in the ultimate fantasy trading experience.
