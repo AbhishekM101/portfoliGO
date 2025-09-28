@@ -95,9 +95,6 @@ src/
    npm run dev
    ```
 
-5. **Access the application**
-   - Open http://localhost:8082 in your browser
-
 ## 🗄️ Database Schema
 
 ### Core Tables
