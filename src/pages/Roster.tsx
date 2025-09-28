@@ -195,14 +195,14 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
               {roster.length > 0 && (
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0">
+                    <Button variant="outline" className="gap-2">
                       <BarChart className="h-4 w-4" />
                       Visualize Portfolio
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                      <DialogTitle className="text-2xl font-bold">
                         Portfolio Analytics Dashboard
                       </DialogTitle>
                       <DialogDescription className="text-lg">
@@ -213,46 +213,46 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                     <div className="space-y-8">
                       {/* Portfolio Overview Cards */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                        <Card className="bg-gradient-card border-border/50">
                           <CardContent className="p-4 text-center">
                             <div className="text-3xl font-bold text-green-600">
                               {pieData[0]?.value.toFixed(1) || '0.0'}
                             </div>
-                            <div className="text-sm text-green-700 font-medium">Total Growth</div>
-                            <div className="text-xs text-green-600">
+                            <div className="text-sm text-muted-foreground font-medium">Total Growth</div>
+                            <div className="text-xs text-muted-foreground">
                               Avg: {(pieData[0]?.value / roster.length || 0).toFixed(1)}
                             </div>
                           </CardContent>
                         </Card>
-                        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                        <Card className="bg-gradient-card border-border/50">
                           <CardContent className="p-4 text-center">
                             <div className="text-3xl font-bold text-blue-600">
                               {pieData[1]?.value.toFixed(1) || '0.0'}
                             </div>
-                            <div className="text-sm text-blue-700 font-medium">Total Value</div>
-                            <div className="text-xs text-blue-600">
+                            <div className="text-sm text-muted-foreground font-medium">Total Value</div>
+                            <div className="text-xs text-muted-foreground">
                               Avg: {(pieData[1]?.value / roster.length || 0).toFixed(1)}
                             </div>
                           </CardContent>
                         </Card>
-                        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+                        <Card className="bg-gradient-card border-border/50">
                           <CardContent className="p-4 text-center">
                             <div className="text-3xl font-bold text-red-600">
                               {pieData[2]?.value.toFixed(1) || '0.0'}
                             </div>
-                            <div className="text-sm text-red-700 font-medium">Total Risk</div>
-                            <div className="text-xs text-red-600">
+                            <div className="text-sm text-muted-foreground font-medium">Total Risk</div>
+                            <div className="text-xs text-muted-foreground">
                               Avg: {(pieData[2]?.value / roster.length || 0).toFixed(1)}
                             </div>
                           </CardContent>
                         </Card>
-                        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                        <Card className="bg-gradient-card border-border/50">
                           <CardContent className="p-4 text-center">
-                            <div className="text-3xl font-bold text-purple-600">
+                            <div className="text-3xl font-bold text-primary">
                               {pieData[3]?.value.toFixed(1) || '0.0'}
                             </div>
-                            <div className="text-sm text-purple-700 font-medium">Total Overall</div>
-                            <div className="text-xs text-purple-600">
+                            <div className="text-sm text-muted-foreground font-medium">Total Overall</div>
+                            <div className="text-xs text-muted-foreground">
                               Avg: {(pieData[3]?.value / roster.length || 0).toFixed(1)}
                             </div>
                           </CardContent>
@@ -260,7 +260,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                       </div>
 
                       {/* Individual Stock Performance */}
-                      <Card className="bg-gradient-to-r from-slate-50 to-gray-50">
+                      <Card className="bg-gradient-card border-border/50">
                         <CardHeader>
                           <div className="flex items-center justify-between">
                             <div>
@@ -271,22 +271,18 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                               <Filter className="h-4 w-4 text-muted-foreground" />
                               <div className="flex gap-1">
                                 {[
-                                  { key: 'all', label: 'All', color: 'bg-gray-500' },
+                                  { key: 'all', label: 'All', color: 'bg-muted' },
                                   { key: 'growth', label: 'Growth', color: 'bg-green-500' },
                                   { key: 'value', label: 'Value', color: 'bg-blue-500' },
                                   { key: 'risk', label: 'Risk', color: 'bg-red-500' },
-                                  { key: 'overall', label: 'Overall', color: 'bg-purple-500' }
+                                  { key: 'overall', label: 'Overall', color: 'bg-primary' }
                                 ].map((metric) => (
                                   <Button
                                     key={metric.key}
                                     variant={selectedMetric === metric.key ? "default" : "outline"}
                                     size="sm"
                                     onClick={() => setSelectedMetric(metric.key as any)}
-                                    className={`text-xs ${
-                                      selectedMetric === metric.key 
-                                        ? `${metric.color} text-white` 
-                                        : 'text-muted-foreground'
-                                    }`}
+                                    className="text-xs"
                                   >
                                     {metric.label}
                                   </Button>
@@ -349,7 +345,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
 
                       {/* Portfolio Composition */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card className="bg-gradient-to-br from-indigo-50 to-purple-50">
+                        <Card className="bg-gradient-card border-border/50">
                           <CardHeader>
                             <CardTitle className="text-xl">Portfolio Composition</CardTitle>
                             <CardDescription>Distribution of scores across your portfolio</CardDescription>
@@ -387,7 +383,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                         </Card>
 
                         {/* Portfolio Balance Radar */}
-                        <Card className="bg-gradient-to-br from-cyan-50 to-blue-50">
+                        <Card className="bg-gradient-card border-border/50">
                           <CardHeader>
                             <CardTitle className="text-xl">Portfolio Balance</CardTitle>
                             <CardDescription>Overall balance across all metrics</CardDescription>
@@ -423,7 +419,7 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                       </div>
 
                       {/* Top Performers */}
-                      <Card className="bg-gradient-to-r from-yellow-50 to-orange-50">
+                      <Card className="bg-gradient-card border-border/50">
                         <CardHeader>
                           <CardTitle className="text-xl">Top Performers</CardTitle>
                           <CardDescription>Your best performing stocks</CardDescription>
@@ -434,17 +430,17 @@ const Roster = ({ onNavigateToPlayers }: RosterProps) => {
                               .sort((a, b) => b.totalScore - a.totalScore)
                               .slice(0, 3)
                               .map((stock, index) => (
-                                <div key={stock.symbol} className="p-4 bg-white rounded-lg border border-orange-200">
+                                <div key={stock.symbol} className="p-4 bg-card rounded-lg border border-border/50">
                                   <div className="flex items-center justify-between mb-2">
                                     <h4 className="font-bold text-lg">{stock.symbol}</h4>
-                                    <Badge variant="outline" className="bg-orange-100 text-orange-800">
+                                    <Badge variant="outline">
                                       #{index + 1}
                                     </Badge>
                                   </div>
-                                  <div className="text-2xl font-bold text-orange-600 mb-1">
+                                  <div className="text-2xl font-bold text-primary mb-1">
                                     {stock.totalScore.toFixed(1)}
                                   </div>
-                                  <div className="text-sm text-gray-600">{stock.company}</div>
+                                  <div className="text-sm text-muted-foreground">{stock.company}</div>
                                   <div className="flex justify-between text-xs mt-2">
                                     <span className="text-green-600">G: {stock.growthScore}</span>
                                     <span className="text-blue-600">V: {stock.valueScore}</span>
